@@ -50,9 +50,9 @@ namespace DiscordBot.Commands
         {
             Dictionary<int, List<string>> Ranks = new Dictionary<int, List<string>>();
             IEnumerable<User> Users = e.Server.Users;
-            if ((string)s == "all")
+            if ((string)s != "all")
             {
-                Users = Users.Where(x => x.Status == UserStatus.Online);
+                Users = Users.Where(x => x.Status == UserStatus.Online && x.Id != Bot.Client.CurrentUser.Id);
             }
 
             foreach (User User in Users.OrderBy(x => x.Name))
