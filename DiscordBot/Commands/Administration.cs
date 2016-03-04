@@ -13,6 +13,22 @@ namespace DiscordBot.Commands
 {
     class Administration
     {
+        public static void Permission(object s, MessageEventArgs e)
+        {
+            string[] Parts = ((string)s).Split(' ');
+
+            if (Parts.Length == 2)
+            {
+                int Rank;
+                if (int.TryParse(Parts[1], out Rank) && Rank < 100)
+                {
+                    Db.SetPerm(Parts[0], Rank);
+                }
+
+                Bot.Send(e.Channel, "Updated!");
+            }
+        }
+
         public static void Rank(object s, MessageEventArgs e)
         {
             if (e.Message.MentionedUsers.Count() == 1)
@@ -30,20 +46,28 @@ namespace DiscordBot.Commands
             }
         }
 
-        public static void Permission(object s, MessageEventArgs e)
+        public static void Ranks(object s, MessageEventArgs e)
         {
-            string[] Parts = ((string)s).Split(' ');
+            Dictionary<int, List<string>> Users = new Dictionary<int, List<string>>();
 
-            if (Parts.Length == 2)
+            foreach (User User in e.Server.Users.OrderBy(x => x.Name))
             {
-                int Rank;
-                if (int.TryParse(Parts[1], out Rank) && Rank < 100)
+                int Rank = Db.UserRank(User.Id);
+                if (!Users.ContainsKey(Rank))
                 {
-                    Db.SetPerm(Parts[0], Rank);
+                    Users.Add(Rank, new List<string>());
                 }
 
-                Bot.Send(e.Channel, "Updated!");
+                Users[Rank].Add(User.Mention);
             }
+
+            string Msg = string.Empty;
+            foreach (KeyValuePair<int, List<string>> KVP in Users.OrderBy(x => -x.Key))
+            {
+                Msg += "Rank " + KVP.Key + ": " + String.Join(", ", KVP.Value) + "\n";
+            }
+
+            Bot.Send(e.Channel, Msg);
         }
 
         public static void Sleep(object s, MessageEventArgs e)

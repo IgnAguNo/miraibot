@@ -11,7 +11,7 @@ namespace DiscordBot
         {
             get
             {
-                SQLiteConnection Connect = new SQLiteConnection("data source=discord.sqlite; Version=3;");
+                SQLiteConnection Connect = new SQLiteConnection("data source=../Release/discord.sqlite; Version=3;");
                 Connect.Open();
                 return Connect;
             }

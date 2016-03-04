@@ -199,8 +199,9 @@ namespace DiscordBot
             });
 
             CommandParser.Categories.Add("Administration", new Command[] {
-                new Command(Command.PrefixType.Command, "rank", "Sets someone's rank", Administration.Rank),
                 new Command(Command.PrefixType.Command, "perm", "Sets a necessary rank to use a command", Administration.Permission),
+                new Command(Command.PrefixType.Command, "rank", "Sets someone's rank", Administration.Rank),
+                new Command(Command.PrefixType.Command, "ranks", "See all special ranks in this server", Administration.Ranks),
 
                 new Command(Command.PrefixType.Command, new string[] { "sleep", "shutdown" }, "Shuts me down", Administration.Sleep),
                 new Command(Command.PrefixType.Command, "setname", "Changes my name", Administration.SetName),
