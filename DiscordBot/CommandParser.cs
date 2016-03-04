@@ -25,11 +25,11 @@ namespace DiscordBot
                 List<Command> Cmds = S.GetCommands(e.Channel.Id);
 
                 string Raw = e.Message.RawText;
-                if (e.Message.Text.StartsWith("{") && e.Message.Text.EndsWith("}"))
+                if (e.Message.Text.StartsWith("{") && e.Message.Text.EndsWith("}") && Db.HasPermission(e.User.Id, "animesearch"))
                 {
                     Search.AnimeInfo(Raw.TrimStart('{').TrimEnd('}'), e);
                 }
-                else if (e.Message.Text.StartsWith("<") && e.Message.Text.EndsWith(">"))
+                else if (e.Message.Text.StartsWith("<") && e.Message.Text.EndsWith(">") && Db.HasPermission(e.User.Id, "mangasearch"))
                 {
                     Search.MangaInfo(Raw.TrimStart('<').TrimEnd('>'), e);
                 }
