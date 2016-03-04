@@ -48,21 +48,26 @@ namespace DiscordBot.Commands
 
         public static void Ranks(object s, MessageEventArgs e)
         {
-            Dictionary<int, List<string>> Users = new Dictionary<int, List<string>>();
+            Dictionary<int, List<string>> Ranks = new Dictionary<int, List<string>>();
+            IEnumerable<User> Users = e.Server.Users;
+            if ((string)s == "all")
+            {
+                Users = Users.Where(x => x.Status == UserStatus.Online);
+            }
 
-            foreach (User User in e.Server.Users.OrderBy(x => x.Name))
+            foreach (User User in Users.OrderBy(x => x.Name))
             {
                 int Rank = Db.UserRank(User.Id);
-                if (!Users.ContainsKey(Rank))
+                if (!Ranks.ContainsKey(Rank))
                 {
-                    Users.Add(Rank, new List<string>());
+                    Ranks.Add(Rank, new List<string>());
                 }
 
-                Users[Rank].Add(User.Mention);
+                Ranks[Rank].Add(User.Mention);
             }
 
             string Msg = string.Empty;
-            foreach (KeyValuePair<int, List<string>> KVP in Users.OrderBy(x => -x.Key))
+            foreach (KeyValuePair<int, List<string>> KVP in Ranks.OrderBy(x => -x.Key))
             {
                 Msg += "Rank " + KVP.Key + ": " + String.Join(", ", KVP.Value) + "\n";
             }
