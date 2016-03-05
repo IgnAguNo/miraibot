@@ -20,7 +20,7 @@ namespace DiscordBot
 
         public static string Mail;
         public static string Password;
-        public static ulong Owner /*= 74779725393825792*/;
+        public static ulong Owner; //Amir 74779725393825792
         public static string GoogleAPI = "AIzaSyAVrXiAHfLEbQbNJP80zbTuW2jL0wuEigQ";
         public static string SoundCloudAPI = "5c28ed4e5aef8098723bcd665d09041d";
         public static string MashapeAPI = "2OuTDTmiT6mshgokCwR10VwkNI40p125gP1jsnofSaiWBJFcUf";
@@ -220,7 +220,6 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, new string[] { "volume", "vol" }, "Changes the volume of the music player", Music.Volume),
                 new Command(Command.PrefixType.Command, new string[] { "playing", "song", "np" }, "Shows the current song", Music.CurrentSong),
                 new Command(Command.PrefixType.Command, new string[] { "playlist", "lq", "queue" }, "Lists the current playlist", Music.Playlist),
-                //new Command(Command.PrefixType.Command, "updates", "Sets this channel as the music update channel", Music.Updates),
                 new Command(Command.PrefixType.Command, new string[] { "skip", "next", "n" }, "Skips the current song", Music.Skip),
                 new Command(Command.PrefixType.Command, new string[] { "shuffle", "s" }, "Shuffles the current queue", Music.Shuffle),
                 new Command(Command.PrefixType.Command, "save", "Saves the current playlist", Music.Save),

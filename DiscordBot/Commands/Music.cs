@@ -184,21 +184,6 @@ namespace DiscordBot.Commands
             ServerData.Servers[e.User.Server.Id].Music.SendPlaylist(e.Channel);
         }
 
-        /*public static void Updates(object s, MessageEventArgs e)
-        {
-            MusicHandler Music = ServerData.Servers[e.User.Server.Id].Music;
-            if (Music.UpdateChannel == e.Channel)
-            {
-                Music.UpdateChannel = null;
-                Bot.Send(e.Channel, "This channel won't get updates on what is playing");
-            }
-            else
-            {
-                Music.UpdateChannel = e.Channel;
-                Bot.Send(e.Channel, "This channel will get updates on what is playing");
-            }
-        }*/
-
         public static void Skip(object s, MessageEventArgs e)
         {
             ServerData.Servers[e.User.Server.Id].Music.Skip();

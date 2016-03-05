@@ -16,18 +16,11 @@ namespace DiscordBot.Handlers
         private IAudioClient AudioClient;
         private ConcurrentQueue<SongData> SongQueue = new ConcurrentQueue<SongData>();
         private const int MaxQueue = 50;
-        
-        private bool Destruct = false;
 
         private MusicProcessor CurrentSong;
-
-        private const int BlockSize = 1920 * 2;
         private Task Sending = null;
 
         public float Volume = 1.0f;
-
-        //public Channel UpdateChannel = null;
-        //private List<Channel> UpdateChannels;
 
         public bool Playing
         {
@@ -44,10 +37,6 @@ namespace DiscordBot.Handlers
                 return "Music";
             }
         }
-
-        public MusicHandler()
-        {
-        }
         
         public async void Run()
         {
@@ -57,7 +46,7 @@ namespace DiscordBot.Handlers
             byte[] NextSend = null;
             int TotalRead = 0;
 
-            while (!Destruct)
+            while (true)
             {
                 if (CurrentSong != null && CurrentSong.Skip)
                 {
@@ -319,7 +308,6 @@ namespace DiscordBot.Handlers
 
         ~MusicHandler()
         {
-            //Destruct = true;
             DisconnectClient().Wait();
         }
     }
