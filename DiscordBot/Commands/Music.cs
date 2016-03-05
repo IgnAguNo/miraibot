@@ -101,30 +101,37 @@ namespace DiscordBot.Commands
         private static string[] Files = null;
         public static void Local(object s, MessageEventArgs e)
         {
+            string MusicRoot = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music\\";
             string Search = ((string)s).ToLower();
 
             int Num;
             if (Files != null && int.TryParse(Search, out Num) && Num > 0 && Num <= Files.Length)
             {
-                Add(Files[Num - 1], e);
+                string Name = Files[Num - 1].Substring(MusicRoot.Length).Compact();
+
+                ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Files[Num - 1]);
+                Bot.Send(e.Channel, "Music | Added `" + Name + "`");
             }
             else
             {
-                Files = Directory.GetFiles(Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music").Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(Search)).ToArray();
+                Files = Directory.GetFiles(MusicRoot).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(Search)).ToArray();
                 if (Files.Length == 0)
                 {
                     Bot.Send(e.Channel, Conversation.CantFind);
                 }
                 else if (Files.Length == 1)
                 {
-                    Add(Files[0], e);
+                    string Name = Files[0].Substring(MusicRoot.Length).Compact();
+
+                    ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Files[0]);
+                    Bot.Send(e.Channel, "Music | Added `" + Name + "`");
                 }
                 else
                 {
                     string Info = "";
                     for (int i = 0; i < Files.Length; i++)
                     {
-                        Info += (i + 1) + ". `" + Files[i] + "`\n";
+                        Info += (i + 1) + ". `" + Files[i].Substring(MusicRoot.Length).Compact() + "`\n";
                     }
 
                     Bot.Send(e.Channel, "Music | Local: \n" + Info);
