@@ -1,7 +1,8 @@
-﻿﻿using Discord;
+﻿using Discord;
 using DiscordBot.Handlers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DiscordBot
 {
@@ -10,13 +11,37 @@ namespace DiscordBot
         public static Dictionary<ulong, ServerData> Servers = new Dictionary<ulong, ServerData>();
 
         private Server Server;
-        public MusicHandler Music = new MusicHandler();
+        public MusicHandler Music;
         public ConcurrentDictionary<ulong, TriviaHandler> Trivia = new ConcurrentDictionary<ulong, TriviaHandler>();
         private ConcurrentDictionary<ulong, List<Command>> ChannelCommands = new ConcurrentDictionary<ulong, List<Command>>();
 
         public ServerData(Server UseServer)
         {
             Server = UseServer;
+
+            Music = new MusicHandler();
+            Music.Run();
+        }
+
+        public List<Channel> ChannelsWithCategory(string Category)
+        {
+            List<Channel> UpdateChannels = new List<Channel>();
+
+            if (CommandParser.Categories.ContainsKey(Category))
+            {
+                string CmdSearch = CommandParser.Categories[Category].First().Keys[0];
+
+                foreach (Channel Channel in Server.TextChannels)
+                {
+                    if (GetCommands(Channel.Id).Any(x => x.Keys.Contains(CmdSearch)))
+                    {
+                        $"Channel {Channel.Name} {Category}".Log();
+                        UpdateChannels.Add(Channel);
+                    }
+                }
+            }
+
+            return UpdateChannels;
         }
 
         public void ReloadCommands(ulong ChannelId)

@@ -25,11 +25,12 @@ namespace DiscordBot
                 List<Command> Cmds = S.GetCommands(e.Channel.Id);
 
                 string Raw = e.Message.RawText;
-                if (e.Message.Text.StartsWith("{") && e.Message.Text.EndsWith("}") && Db.HasPermission(e.User.Id, "animesearch"))
+
+                if (e.Message.Text.StartsWith("{") && e.Message.Text.EndsWith("}") && Db.HasPermission(e.User.Id, "anime"))
                 {
                     Search.AnimeInfo(Raw.TrimStart('{').TrimEnd('}'), e);
                 }
-                else if (e.Message.Text.StartsWith("<") && e.Message.Text.EndsWith(">") && Db.HasPermission(e.User.Id, "mangasearch"))
+                else if (e.Message.Text.StartsWith("<") && e.Message.Text.EndsWith(">") && Db.HasPermission(e.User.Id, "manga"))
                 {
                     Search.MangaInfo(Raw.TrimStart('<').TrimEnd('>'), e);
                 }
@@ -71,7 +72,7 @@ namespace DiscordBot
                     }
                 }
 
-                if (Raw.EndsWith("?") && Raw.Length > 1)
+                if (Raw.EndsWith("?") && Raw.Length > 1 && Db.HasPermission(e.User.Id, "ask"))
                 {
                     Search.Ask(Raw, e);
                 }
@@ -86,7 +87,7 @@ namespace DiscordBot
         {
             string Cat = (string)s;
 
-            if (Cat.Trim() != string.Empty && CommandParser.Categories.ContainsKey(Cat))
+            if (Cat.Trim() != string.Empty && Categories.ContainsKey(Cat))
             {
                 if (Db.ChannelToggleCategory(e.Channel.Id, Cat))
                 {
@@ -103,7 +104,7 @@ namespace DiscordBot
 
         public static async void Help(object s, MessageEventArgs e)
         {
-            foreach (KeyValuePair<string, Command[]> Cat in Categories.Where(c => !Db.ChannelDisabledCategory(e.Channel.Id, c.Key)))
+            foreach (KeyValuePair<string, Command[]> Cat in Categories)
             {
                 string CatInfo = string.Empty;
 
@@ -133,6 +134,18 @@ namespace DiscordBot
 
                 if (CatInfo != string.Empty)
                 {
+                    if (Db.ChannelDisabledCategory(e.Channel.Id, Cat.Key))
+                    {
+                        if (e.User.Id == Bot.Owner)
+                        {
+                            CatInfo = "Disabled";
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+
                     Bot.Send(e.Channel, (Cat.Key == String.Empty ? "**Main**" : "**" + Cat.Key + "**") + "\n" + CatInfo);
                     await Task.Delay(150);
                 }

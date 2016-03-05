@@ -195,12 +195,12 @@ namespace DiscordBot
         {
             CommandParser.Categories.Add("", new Command[] {
                 new Command(Command.PrefixType.Command, new string[] { "help", "commands" }, "Shows all your commands", CommandParser.Help),
-                new Command(Command.PrefixType.Command, "togglecat", "Turns a category on/off", CommandParser.ToggleCat)
+                new Command(Command.PrefixType.Command, "toggle", "Turns a category on/off", CommandParser.ToggleCat)
             });
 
             CommandParser.Categories.Add("Administration", new Command[] {
-                new Command(Command.PrefixType.Command, "perm", "Sets a necessary rank to use a command", Administration.Permission),
-                new Command(Command.PrefixType.Command, "rank", "Sets someone's rank", Administration.Rank),
+                new Command(Command.PrefixType.Command, "minrank", "Sets a necessary rank to use a command", Administration.Permission),
+                new Command(Command.PrefixType.Command, "giverank", "Sets someone's rank", Administration.Rank),
                 new Command(Command.PrefixType.Command, "ranks", "See all special ranks in this server", Administration.Ranks),
 
                 new Command(Command.PrefixType.Command, new string[] { "sleep", "shutdown" }, "Shuts me down", Administration.Sleep),
@@ -220,7 +220,7 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, new string[] { "volume", "vol" }, "Changes the volume of the music player", Music.Volume),
                 new Command(Command.PrefixType.Command, new string[] { "playing", "song", "np" }, "Shows the current song", Music.CurrentSong),
                 new Command(Command.PrefixType.Command, new string[] { "playlist", "lq", "queue" }, "Lists the current playlist", Music.Playlist),
-                new Command(Command.PrefixType.Command, "updates", "Sets this channel as the music update channel", Music.Updates),
+                //new Command(Command.PrefixType.Command, "updates", "Sets this channel as the music update channel", Music.Updates),
                 new Command(Command.PrefixType.Command, new string[] { "skip", "next", "n" }, "Skips the current song", Music.Skip),
                 new Command(Command.PrefixType.Command, new string[] { "shuffle", "s" }, "Shuffles the current queue", Music.Shuffle),
                 new Command(Command.PrefixType.Command, "save", "Saves the current playlist", Music.Save),
@@ -240,7 +240,9 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, "osu", "Show someone's osu stats", Search.Osu),
                 new Command(Command.PrefixType.Command, new string[] { "avatar", "av" }, "Show someone's avatar", Search.Avatar),
                 new Command(Command.PrefixType.Command, new string[] { "define", "ud" }, "Search for a term", Search.Define),
-                new Command(Command.PrefixType.Command, new string[] { "lewd", "booru", "nsfw" }, "Search for a lewd image", Search.Lewd)
+                new Command(Command.PrefixType.Command, new string[] { "lewd", "booru", "nsfw" }, "Search for a lewd image", Search.Lewd),
+                new Command(Command.PrefixType.Command, "anime", "Search for an anime - shorthand {name}", Search.AnimeInfo),
+                new Command(Command.PrefixType.Command, "manga", "Search for a manga - shorthand <name>", Search.MangaInfo)
             });
 
             string Spam = "O - oooooooooo AAAAE - A - A - I - A - U - JO - oooooooooooo AAE - O - A - A - U - U - A - E - eee - ee - eee AAAAE - A - E - I - E - A - JO - ooo - oo - oo - oo EEEEO - A - AAA - AAAA";

@@ -12,7 +12,7 @@ namespace DiscordBot.Handlers
     class MusicHandler : IHandler
     {
         public static ByteBuffer Buffers;
-
+        
         private IAudioClient AudioClient;
         private ConcurrentQueue<SongData> SongQueue = new ConcurrentQueue<SongData>();
         private const int MaxQueue = 50;
@@ -26,7 +26,8 @@ namespace DiscordBot.Handlers
 
         public float Volume = 1.0f;
 
-        public Channel UpdateChannel = null;
+        //public Channel UpdateChannel = null;
+        //private List<Channel> UpdateChannels;
 
         public bool Playing
         {
@@ -46,78 +47,79 @@ namespace DiscordBot.Handlers
 
         public MusicHandler()
         {
-            Task.Run(async () =>
+        }
+        
+        public async void Run()
+        {
+            SongData PlaySong;
+
+            byte[] CurrentSend = null;
+            byte[] NextSend = null;
+            int TotalRead = 0;
+
+            while (!Destruct)
             {
-                SongData PlaySong;
-                
-                byte[] CurrentSend = null;
-                byte[] NextSend = null;
-                int TotalRead = 0;
-
-                while (!Destruct)
+                if (CurrentSong != null && CurrentSong.Skip)
                 {
-                    if (CurrentSong != null && CurrentSong.Skip)
-                    {
-                        CurrentSong.Dispose();
-                        CurrentSong = null;
-                    }
+                    CurrentSong.Dispose();
+                    CurrentSong = null;
+                }
 
-                    if (AudioClient != null && AudioClient.State == ConnectionState.Connected)
+                if (AudioClient != null && AudioClient.State == ConnectionState.Connected)
+                {
+                    if (CurrentSong == null)
                     {
-                        if (CurrentSong == null)
+                        //Dequeue a song
+                        if (SongQueue.Count > 0 && SongQueue.TryDequeue(out PlaySong))
                         {
-                            //Dequeue a song
-                            if (SongQueue.Count > 0 && SongQueue.TryDequeue(out PlaySong))
-                            {
-                                CurrentSong = new MusicProcessor(PlaySong);
+                            CurrentSong = new MusicProcessor(PlaySong);
 
-                                if (UpdateChannel != null)
-                                {
-                                    SendPlaylist(UpdateChannel);
-                                }
-
-                                TotalRead = 0;
-                            }
-                            else
+                            foreach (Channel Channel in ServerData.Servers[AudioClient.Server.Id].ChannelsWithCategory("Music"))
                             {
-                                //No new song in queue
-                                await Task.Delay(100);
+                                SendPlaylist(Channel);
                             }
+
+                            TotalRead = 0;
                         }
                         else
                         {
-                            await FinishSend();
-
-                            if (NextSend != null)
-                            {
-                                Sending = AudioClient.OutputStream.WriteAsync(NextSend, 0, NextSend.Length);
-                                if (CurrentSend != null)
-                                {
-                                    Buffers.Return(CurrentSend);
-                                }
-
-                                CurrentSend = NextSend;
-                                NextSend = null;
-                            }
-                            else if (CurrentSong.TotalSize <= TotalRead && CurrentSong.FinishedBuffer)
-                            {
-                                Skip();
-                            }
-
-                            if (CurrentSong.QueuedBuffers.Count > 0)
-                            {
-                                NextSend = CurrentSong.QueuedBuffers.Dequeue().AdjustVolume(Volume);
-                                TotalRead += NextSend.Length;
-                            }
+                            //No new song in queue
+                            await Task.Delay(100);
                         }
                     }
                     else
                     {
-                        //Paused or not in voice chat
-                        await Task.Delay(100);
+                        await FinishSend();
+
+                        if (NextSend != null)
+                        {
+                            Sending = AudioClient.OutputStream.WriteAsync(NextSend, 0, NextSend.Length);
+                            if (CurrentSend != null)
+                            {
+                                Buffers.Return(CurrentSend);
+                            }
+
+                            CurrentSend = NextSend;
+                            NextSend = null;
+                        }
+                        else if (CurrentSong.TotalSize <= TotalRead && CurrentSong.FinishedBuffer)
+                        {
+                            Skip();
+                        }
+
+                        if (CurrentSong.QueuedBuffers.Count > 0)
+                        {
+                            NextSend = CurrentSong.QueuedBuffers.Dequeue().AdjustVolume(Volume);
+                            TotalRead += NextSend.Length;
+                        }
                     }
                 }
-            });
+                else
+                {
+                    //Paused or not in voice chat
+                    await Task.Delay(100);
+                }
+            }
         }
 
         public async Task ConnectClient(Channel VoiceChannel)

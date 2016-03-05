@@ -159,8 +159,9 @@ namespace DiscordBot.Commands
 
         private static string AniToken = null;
 
-        public static void AnimeInfo(string s, MessageEventArgs e)
+        public static void AnimeInfo(object sObj, MessageEventArgs e)
         {
+            string s = (string)sObj;
             RestClient API = Search.GetAniApi();
 
             RestRequest SearchRequest = new RestRequest("/anime/search/" + Uri.EscapeUriString(s));
@@ -196,8 +197,9 @@ namespace DiscordBot.Commands
             }
         }
 
-        public static void MangaInfo(string s, MessageEventArgs e)
+        public static void MangaInfo(object sObj, MessageEventArgs e)
         {
+            string s = (string)sObj;
             RestClient API = Search.GetAniApi();
 
             RestRequest SearchRequest = new RestRequest("/manga/search/" + Uri.EscapeUriString(s));
