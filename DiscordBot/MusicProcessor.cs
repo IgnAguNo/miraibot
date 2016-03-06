@@ -1,7 +1,8 @@
-﻿﻿using DiscordBot.Handlers;
+﻿using DiscordBot.Handlers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DiscordBot
@@ -12,20 +13,21 @@ namespace DiscordBot
 
         public SongData Song;
         public bool Skip = false;
-        //public DualStream Buffer;
         public Queue<byte[]> QueuedBuffers = new Queue<byte[]>();
         private Process Ffmpeg;
+
         public long TotalSize = 0;
         public bool FinishedBuffer = false;
+
+        private const int Prebuffer = 16;
+        public Semaphore Waiter = new Semaphore(Prebuffer, Prebuffer + 1);
 
         public MusicProcessor(SongData PlaySong)
         {
             Song = PlaySong;
-            //this.Buffer = new DualStream();
             Ffmpeg = Process.Start(new ProcessStartInfo
             {
                 FileName = "ffmpeg",
-                //FileName = "C:/ffmpeg/bin/ffmpeg.exe",
                 Arguments = "-i \"" + this.Song.Uri + "\" -f s16le -ar 48000 -ac 2 pipe:1 -loglevel quiet",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
@@ -38,22 +40,32 @@ namespace DiscordBot
         {
             int Read = 0;
 
-            byte[] ReadBuffer = MusicHandler.Buffers.Take();
+            byte[] ReadBuffer = new byte[0];
             int ReadBufferUsed = 0;
 
             int Fails = 0;
 
             try
             {
-                //int BlockSize = 1920 * 2 * 4;
-                //byte[] ByteBuffer = new byte[BlockSize];
-                while (!Skip && TotalSize < ((long)3).GB())
+                while (true)
                 {
+                    if (Skip)
+                    {
+                        MusicHandler.Buffers.Return(ReadBuffer);
+                        break;
+                    }
+
                     if (ReadBufferUsed == ReadBuffer.Length)
                     {
-                        QueuedBuffers.Enqueue(ReadBuffer);
+                        if (ReadBufferUsed != 0)
+                        {
+                            QueuedBuffers.Enqueue(ReadBuffer);
+                            Waiter.WaitOne();
+
+                            ReadBufferUsed = 0;
+                        }
+
                         ReadBuffer = MusicHandler.Buffers.Take();
-                        ReadBufferUsed = 0;
                     }
 
                     Read = await Ffmpeg.StandardOutput.BaseStream.ReadAsync(ReadBuffer, ReadBufferUsed, ReadBuffer.Length - ReadBufferUsed);
@@ -77,7 +89,7 @@ namespace DiscordBot
                 }
 
                 FinishedBuffer = true;
-                ((Skip ? "Stopped" : "Finished") + " buffering " + Song.Name + " (" + TotalSize / ((long)1).MB() + "MB)").Log();
+                ((Skip ? "Stopped" : "Finished") + " buffering " + Song.Name + " (" + TotalSize / 1.MB() + "MB)").Log();
             }
             catch (Exception Ex)
             {
@@ -102,17 +114,20 @@ namespace DiscordBot
 
         public void Dispose()
         {
-            try
+            Task.Run(() =>
             {
-                while (QueuedBuffers.Count > 0)
+                try
                 {
-                    MusicHandler.Buffers.Return(QueuedBuffers.Dequeue());
+                    while (QueuedBuffers.Count > 0)
+                    {
+                        MusicHandler.Buffers.Return(QueuedBuffers.Dequeue());
+                    }
                 }
-            }
-            catch (Exception Ex)
-            {
-                Bot.Client.Log.Log(Discord.LogSeverity.Error, "DequeueMemoryFix", null, Ex);
-            }
+                catch (Exception Ex)
+                {
+                    Bot.Client.Log.Log(Discord.LogSeverity.Error, "DequeueMemoryFix", null, Ex);
+                }
+            });
         }
     }
 }

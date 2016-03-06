@@ -99,6 +99,8 @@ namespace DiscordBot.Handlers
                         if (CurrentSong.QueuedBuffers.Count > 0)
                         {
                             NextSend = CurrentSong.QueuedBuffers.Dequeue().AdjustVolume(Volume);
+                            CurrentSong.Waiter.Release(1);
+
                             TotalRead += NextSend.Length;
                         }
                     }
@@ -246,7 +248,7 @@ namespace DiscordBot.Handlers
 
             if (CurrentSong != null)
             {
-                Text += "Now Playing\n*" + CurrentSong.Song.Name + "*\n";
+                Text += "Now Playing\n*" + CurrentSong.Song.Name + "*\n\n";
             }
 
             SongData[] Queued = SongQueue.ToArray();

@@ -25,14 +25,14 @@ namespace DiscordBot.Handlers
             {
                 if (this.Answer == null)
                 {
-                    return String.Empty;
+                    return string.Empty;
                 }
 
                 char[] Letters = this.Answer.ToArray();
                 int Count = 0;
-                for (int i = 0; i < Letters.Length; i++)
+                for (int i = 1; i < Letters.Length; i++)
                 {
-                    if (Char.IsLetterOrDigit(Letters[i]) && ++Count % 3 != 0)
+                    if (char.IsLetterOrDigit(Letters[i]) && ++Count % 3 != 0)
                     {
                         Letters[i] = '_';
                     }
@@ -189,8 +189,6 @@ namespace DiscordBot.Handlers
                 Send(Channel, "That's correct " + e.User.Mention + " - won one pair of glasses");
 
                 Db.AddPoints(e.User.Id);
-                //Bot.DonutCount[e.User.Id] += 1;
-
                 return true;
             }
 

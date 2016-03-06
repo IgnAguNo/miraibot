@@ -72,7 +72,7 @@ namespace DiscordBot
                     }
                 }
 
-                if (Raw.EndsWith("?") && Raw.Length > 1 && Db.HasPermission(e.User.Id, "ask"))
+                if (Raw.StartsWith(Bot.Mention) && Raw.EndsWith("?") && Db.HasPermission(e.User.Id, "ask"))
                 {
                     Search.Ask(Raw, e);
                 }
@@ -147,7 +147,7 @@ namespace DiscordBot
                     }
 
                     Bot.Send(e.Channel, (Cat.Key == String.Empty ? "**Main**" : "**" + Cat.Key + "**") + "\n" + CatInfo);
-                    await Task.Delay(150);
+                    await Task.Delay(250);
                 }
             }
         }

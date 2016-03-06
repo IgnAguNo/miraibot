@@ -35,7 +35,7 @@ namespace DiscordBot
                 {
                     if (GetCommands(Channel.Id).Any(x => x.Keys.Contains(CmdSearch)))
                     {
-                        $"Channel {Channel.Name} {Category}".Log();
+                        //$"Channel {Channel.Name} {Category}".Log();
                         UpdateChannels.Add(Channel);
                     }
                 }

@@ -129,7 +129,7 @@ namespace DiscordBot
                 {
                     try
                     {
-                        Console.Title = $"[DISCORD] <@{Client.CurrentUser.Name}> {CommandParser.Executed} Command Executed - {Msgs} Messages Sent - {Spam} Spam Blocked - Running {(DateTime.Now - Start).ToString("%d")} days, {(DateTime.Now - Start).ToString(@"%h\:mm\:ss")}";
+                        Console.Title = $"[@{Client.CurrentUser.Name}] {CommandParser.Executed} Command Executed - {Msgs} Messages Sent - {Spam} Spam Blocked - Running {(DateTime.Now - Start).ToString("%d")} days, {(DateTime.Now - Start).ToString(@"%h\:mm\:ss")}";
                         int Playing = ServerData.Servers.Count(x => x.Value.Music.Playing);
                         Client.SetGame(Playing + " song" + (Playing == 1 ? "" : "s"));
                     }
@@ -154,7 +154,7 @@ namespace DiscordBot
                     return;
                 }
 
-                if (SpamProtection && Client.MessageQueue.Count > 2)
+                if (SpamProtection && Client.MessageQueue.Count > 3)
                 {
                     $"Spam: {Message.Compact()}".Log();
                     Client.MessageQueue.Clear();
@@ -193,12 +193,12 @@ namespace DiscordBot
 
         private static void InitCommands()
         {
-            CommandParser.Categories.Add("", new Command[] {
+            CommandParser.Categories.Add(string.Empty, new Command[] {
                 new Command(Command.PrefixType.Command, new string[] { "help", "commands" }, "Shows all your commands", CommandParser.Help),
                 new Command(Command.PrefixType.Command, "toggle", "Turns a category on/off", CommandParser.ToggleCat)
             });
 
-            CommandParser.Categories.Add("Administration", new Command[] {
+            CommandParser.Categories.Add(typeof(Administration).Name, new Command[] {
                 new Command(Command.PrefixType.Command, "minrank", "Sets a necessary rank to use a command", Administration.Permission),
                 new Command(Command.PrefixType.Command, "giverank", "Sets someone's rank", Administration.Rank),
                 new Command(Command.PrefixType.Command, "ranks", "See all special ranks in this server", Administration.Ranks),
@@ -210,7 +210,7 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, "fix", "Clears the message queue", Administration.Fix)
             });
 
-            CommandParser.Categories.Add("Music", new Command[] {
+            CommandParser.Categories.Add(typeof(Music).Name, new Command[] {
                 new Command(Command.PrefixType.Command, "join", "Joins your current voice channel", Music.Join),
                 new Command(Command.PrefixType.Command, "leave", "Leaves any voice channel", Music.Leave),
                 new Command(Command.PrefixType.Command, new string[] { "add", "q" }, "Adds a song title to the music queue", Music.Add),
@@ -226,13 +226,13 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, "load", "Loads the current playlist from", Music.Load)
             });
 
-            CommandParser.Categories.Add("Trivia", new Command[] {
+            CommandParser.Categories.Add(typeof(Trivia).Name, new Command[] {
                 new Command(Command.PrefixType.Command, new string[] { "starttrivia", "t" }, "Starts a trivia match in your channel", Trivia.Start),
                 new Command(Command.PrefixType.Command, new string[] { "leaderboard", "tl" }, "Shows the current trivia's leaderboard", Trivia.Leaderboards),
                 new Command(Command.PrefixType.Command, new string[] { "stoptrivia", "tq" }, "Stops a trivia match in your channel", Trivia.Stop)
             });
 
-            CommandParser.Categories.Add("Search", new Command[] {
+            CommandParser.Categories.Add(typeof(Search).Name, new Command[] {
                 new Command(Command.PrefixType.Command, new string[] { "ask", "8ball" }, "Ask me a question", Search.Ask),
                 new Command(Command.PrefixType.Command, new string[] { "youtube", "yt" }, "Searches for a youtube video", Search.Youtube),
                 new Command(Command.PrefixType.Command, new string[] { "image", "img" }, "Search for an image", Search.Image),
@@ -252,7 +252,7 @@ namespace DiscordBot
                 FullSpam += Spam + "\n";
             }
 
-            CommandParser.Categories.Add("Conversation", new Command[] {
+            CommandParser.Categories.Add(typeof(Conversation).Name, new Command[] {
                 new Command(Command.PrefixType.Mention, new string[] { "choose from" }, "Choose from a list", Conversation.Choose),
                 new Command(Command.PrefixType.Mention, "how are you", "Check if my owner is online", Conversation.Status),
                 new Command(Command.PrefixType.Mention, new string[] { "do you like me", "do you love me" }, "...", Conversation.Love),
@@ -273,10 +273,10 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Mention, new string[] { "you're weird", "you are weird" }, "Make me sad", Conversation.Weird),
                 new Command(Command.PrefixType.Mention, new string[] { "you're cute", "you are cute" }, "Make me happy", Conversation.Cute),
                 new Command(Command.PrefixType.Mention, new string[] { "do you even lewd", "try to be lewd" }, "Send semi-lewd pictures", Conversation.Lewd),
-                new Command(Command.PrefixType.Mention, "shitpost", "Send a shitpost", Conversation.Shitpost),
-                new Command(Command.PrefixType.Mention, new string[] { "what's", "what is" }, "Search for a term", Search.Define),
-                new Command(Command.PrefixType.Mention, "what are", "Search for a plural term", Search.DefineSimple),
-                new Command(Command.PrefixType.Mention, new string[] { "send oc", "stealie" }, "Stealie a mealie", Conversation.Dogman),
+                new Command(Command.PrefixType.Mention, new string[] { "what's", "what is", "who's", "who is" }, "Search for a term", Search.Define),
+                new Command(Command.PrefixType.Mention, new string[] { "what are", "what're" }, "Search for a plural term", Search.DefineSimple),
+                //new Command(Command.PrefixType.Mention, "shitpost", "Send a shitpost", Conversation.Shitpost),
+                //new Command(Command.PrefixType.Mention, new string[] { "send oc", "stealie" }, "Stealie a mealie", Conversation.Dogman),
 
                 new Command(Command.PrefixType.None, "megane", "", "Fuyukai desu!"),
                 new Command(Command.PrefixType.None, "burn the chat", "", "🔥 ด้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็ด้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็ด้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็็้้้้ 🔥"),

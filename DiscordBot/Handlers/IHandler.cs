@@ -11,6 +11,6 @@ namespace DiscordBot.Handlers
         }
 
         public void Send(Channel Channel, string Message, Stream Stream = null)
-            => Bot.Send(Channel, Name + " | " + Message, Stream);
+            => Bot.Send(Channel, "**" + Name + "** | " + Message, Stream);
     }
 }

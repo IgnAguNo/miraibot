@@ -45,14 +45,14 @@ namespace DiscordBot.Commands
                         string SoundCloudResponse = await ("http://api.soundcloud.com/resolve?url=" + Query + "&client_id=" + Bot.SoundCloudAPI).ResponseAsync();
                         if (SoundCloudResponse == String.Empty || !SoundCloudResponse.StartsWith("{\"kind\":\"track\""))
                         {
-                            Bot.Send(e.Channel, "Music | Sorry, the SoundCloud link doesn't seem to be working");
+                            Bot.Send(e.Channel, "Sorry, the SoundCloud link doesn't seem to be working");
                         }
                         else
                         {
                             JObject Response = JObject.Parse(SoundCloudResponse);
                             string Name = Response["title"].ToString();
                             ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Response["stream_url"].ToString() + "?client_id=" + Bot.SoundCloudAPI);
-                            Bot.Send(e.Channel, "Music | Added `" + Name + "`");
+                            Bot.Send(e.Channel, "Added `" + Name + "`");
                         }
                     }
                     catch (Exception Ex)
@@ -65,9 +65,9 @@ namespace DiscordBot.Commands
                     YouTubeVideo Video = null;
                     Query = await Search.YoutubeResult(Query);
 
-                    if (Query == String.Empty)
+                    if (Query == string.Empty)
                     {
-                        Bot.Send(e.Channel, "Music | " + Conversation.CantFind);
+                        Bot.Send(e.Channel, Conversation.CantFind);
                         return;
                     }
                     else
@@ -81,20 +81,20 @@ namespace DiscordBot.Commands
 
                         if (Video == null)
                         {
-                            Bot.Send(e.Channel, "Music | That video isn't compatible with me");
+                            Bot.Send(e.Channel, "That video isn't compatible with me");
                             return;
                         }
 
                         string Name = Video.Title.Substring(0, Video.Title.Length - 10);
                         ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Video.Uri);
-                        Bot.Send(e.Channel, "Music | Added `" + Name + "`");
+                        Bot.Send(e.Channel, "Added `" + Name + "`");
                     }
                 }
             }
             else
             {
                 ServerData.Servers[e.User.Server.Id].Music.Enqueue(Query.Compact(), Query);
-                Bot.Send(e.Channel, "Music | Added `" + Query.Compact() + "`");
+                Bot.Send(e.Channel, "Added `" + Query.Compact() + "`");
             }
         }
 
@@ -104,13 +104,26 @@ namespace DiscordBot.Commands
             string MusicRoot = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music\\";
             string Search = ((string)s).ToLower();
 
-            int Num;
-            if (Files != null && int.TryParse(Search, out Num) && Num > 0 && Num <= Files.Length)
+            List<string> Added = new List<string>();
+            if (Files != null)
             {
-                string Name = Files[Num - 1].Substring(MusicRoot.Length).Compact();
+                int Num;
+                foreach (string StringNum in Search.Split(','))
+                {
+                    if (int.TryParse(StringNum.Trim(), out Num) && Num > 0 && Num <= Files.Length)
+                    {
+                        string Name = Files[Num - 1].Substring(MusicRoot.Length).Compact();
+                        ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Files[Num - 1]);
+                        Added.Add(Name);
+                    }
+                }
 
-                ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Files[Num - 1]);
-                Bot.Send(e.Channel, "Music | Added `" + Name + "`");
+                Files = null;
+            }
+
+            if (Added.Count > 0)
+            {
+                Bot.Send(e.Channel, "Added: \n`" + string.Join("\n", Added) + "`");
             }
             else
             {
@@ -124,7 +137,7 @@ namespace DiscordBot.Commands
                     string Name = Files[0].Substring(MusicRoot.Length).Compact();
 
                     ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Files[0]);
-                    Bot.Send(e.Channel, "Music | Added `" + Name + "`");
+                    Bot.Send(e.Channel, "Added `" + Name + "`");
                 }
                 else
                 {
@@ -134,7 +147,7 @@ namespace DiscordBot.Commands
                         Info += (i + 1) + ". `" + Files[i].Substring(MusicRoot.Length).Compact() + "`\n";
                     }
 
-                    Bot.Send(e.Channel, "Music | Local: \n" + Info);
+                    Bot.Send(e.Channel, "Local: \n" + Info);
                 }
             }
         }
@@ -142,9 +155,9 @@ namespace DiscordBot.Commands
         public static void Push(object s, MessageEventArgs e)
         {
             int Place = 0;
-            if (Int32.TryParse((string)s, out Place))
+            if (int.TryParse((string)s, out Place))
             {
-                Bot.Send(e.Channel, "Music | Pushed `" + ServerData.Servers[e.User.Server.Id].Music.Push(Place).Name + "` to the top");
+                Bot.Send(e.Channel, "Pushed `" + ServerData.Servers[e.User.Server.Id].Music.Push(Place).Name + "` to the top");
             }
         }
 
@@ -156,7 +169,7 @@ namespace DiscordBot.Commands
 
             foreach (string Remove in ToRemoveString)
             {
-                if (Int32.TryParse(Remove.Trim(), out Place))
+                if (int.TryParse(Remove.Trim(), out Place))
                 {
                     ToRemove.Add(Place);
                 }
@@ -165,7 +178,7 @@ namespace DiscordBot.Commands
             List<SongData> Removed = ServerData.Servers[e.User.Server.Id].Music.Remove(ToRemove);
             foreach (SongData Song in Removed)
             {
-                Bot.Send(e.Channel, "Music | Removed `" + Song.Name + "`");
+                Bot.Send(e.Channel, "Removed `" + Song.Name + "`");
                 Task.Delay(100).Wait();
             }
         }

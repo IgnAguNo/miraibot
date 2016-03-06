@@ -74,14 +74,9 @@ namespace DiscordBot
             catch (Exception ex) { $"HttpException: {ex}".Log(); return url; }
         }
 
-        public static long MB(this long Input)
+        public static long MB(this int Input)
         {
-            return Input * 1024 * 1024;
-        }
-
-        public static long GB(this long Input)
-        {
-            return Input * 1024 * 1024 * 1024;
+            return (long)Input * 1024 * 1024;
         }
 
         public static byte[] AdjustVolume(this byte[] AudioSamples, float Volume)
