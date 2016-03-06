@@ -23,9 +23,8 @@ namespace DiscordBot.Commands
                 if (int.TryParse(Parts[1], out Rank) && Rank < 100)
                 {
                     Db.SetPerm(Parts[0], Rank);
+                    Bot.Send(e.Channel, "Updated `" + Parts[0] + "` to a minimum rank of " + Rank);
                 }
-
-                Bot.Send(e.Channel, "Updated!");
             }
         }
 
