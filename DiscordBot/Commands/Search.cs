@@ -109,7 +109,7 @@ namespace DiscordBot.Commands
             {
                 string Query = (string)s;
 
-                if (Query != String.Empty)
+                if (Query != string.Empty)
                 {
                     WebHeaderCollection Headers = new WebHeaderCollection();
                     Headers.Add("X-Mashape-Key", Bot.MashapeAPI);
@@ -162,16 +162,16 @@ namespace DiscordBot.Commands
         public static void AnimeInfo(object sObj, MessageEventArgs e)
         {
             string s = (string)sObj;
-            RestClient API = Search.GetAniApi();
+            RestClient API = GetAniApi();
 
             RestRequest SearchRequest = new RestRequest("/anime/search/" + Uri.EscapeUriString(s));
-            SearchRequest.AddParameter("access_token", Search.AniToken);
+            SearchRequest.AddParameter("access_token", AniToken);
             string SearchResString = API.Execute(SearchRequest).Content;
 
-            if (SearchResString.Trim() != String.Empty && JToken.Parse(SearchResString) is JArray)
+            if (SearchResString.Trim() != string.Empty && JToken.Parse(SearchResString) is JArray)
             {
                 RestRequest InfoRequest = new RestRequest("/anime/" + JArray.Parse(SearchResString)[0]["id"]);
-                InfoRequest.AddParameter("access_token", Search.AniToken);
+                InfoRequest.AddParameter("access_token", AniToken);
 
                 JObject Info = JObject.Parse(API.Execute(InfoRequest).Content);
 
@@ -200,16 +200,16 @@ namespace DiscordBot.Commands
         public static void MangaInfo(object sObj, MessageEventArgs e)
         {
             string s = (string)sObj;
-            RestClient API = Search.GetAniApi();
+            RestClient API = GetAniApi();
 
             RestRequest SearchRequest = new RestRequest("/manga/search/" + Uri.EscapeUriString(s));
-            SearchRequest.AddParameter("access_token", Search.AniToken);
+            SearchRequest.AddParameter("access_token", AniToken);
             string SearchResString = API.Execute(SearchRequest).Content;
 
-            if (SearchResString.Trim() != String.Empty && JToken.Parse(SearchResString) is JArray)
+            if (SearchResString.Trim() != string.Empty && JToken.Parse(SearchResString) is JArray)
             {
                 RestRequest InfoRequest = new RestRequest("/manga/" + JArray.Parse(SearchResString)[0]["id"]);
-                InfoRequest.AddParameter("access_token", Search.AniToken);
+                InfoRequest.AddParameter("access_token", AniToken);
 
                 JObject Info = JObject.Parse(API.Execute(InfoRequest).Content);
 
@@ -263,13 +263,10 @@ namespace DiscordBot.Commands
                 WebRequest wr = WebRequest.Create("https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=" + Uri.EscapeDataString(Query) + "&key=" + Bot.GoogleAPI);
                 StreamReader sr = new StreamReader((await wr.GetResponseAsync()).GetResponseStream());
 
-                dynamic obj = JObject.Parse(await sr.ReadToEndAsync());
-                return "http://www.youtube.com/watch?v=" + obj.items[0].id.videoId.ToString();
+                JObject obj = JObject.Parse(await sr.ReadToEndAsync());
+                return "http://www.youtube.com/watch?v=" + obj["items"][0]["id"]["videoId"].ToString();
             }
-            catch (Exception Ex)
-            {
-                $"YtResult {Ex}".Log();
-            }
+            catch { }
 
             return string.Empty;
         }

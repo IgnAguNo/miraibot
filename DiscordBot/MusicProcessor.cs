@@ -89,7 +89,7 @@ namespace DiscordBot
                 }
 
                 FinishedBuffer = true;
-                ((Skip ? "Stopped" : "Finished") + " buffering " + Song.Name + " (" + TotalSize / 1.MB() + "MB)").Log();
+                ((Fails == 10 ? "Finished" : "Stopped") + " buffering " + Song.Name + " (" + TotalSize / 1.MB() + "MB)").Log();
             }
             catch (Exception Ex)
             {

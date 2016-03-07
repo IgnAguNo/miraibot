@@ -275,8 +275,9 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Mention, new string[] { "do you even lewd", "try to be lewd" }, "Send semi-lewd pictures", Conversation.Lewd),
                 new Command(Command.PrefixType.Mention, new string[] { "what's", "what is", "who's", "who is" }, "Search for a term", Search.Define),
                 new Command(Command.PrefixType.Mention, new string[] { "what are", "what're" }, "Search for a plural term", Search.DefineSimple),
-                //new Command(Command.PrefixType.Mention, "shitpost", "Send a shitpost", Conversation.Shitpost),
-                //new Command(Command.PrefixType.Mention, new string[] { "send oc", "stealie" }, "Stealie a mealie", Conversation.Dogman),
+                new Command(Command.PrefixType.Mention, "shitpost", "Send a shitpost", Conversation.Shitpost),
+                new Command(Command.PrefixType.Mention, new string[] { "send oc", "stealie" }, "Stealie a mealie", Conversation.Dogman),
+                new Command(Command.PrefixType.Command, "meme", "Memeify a text", Conversation.Meme),
 
                 new Command(Command.PrefixType.None, "megane", "", "Fuyukai desu!"),
                 new Command(Command.PrefixType.None, "burn the chat", "", "🔥 ด้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็ด้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็ด้้้้้็็็็็้้้้้็็็็็้้้้้้้้็็็็็้้้้้็็็็็้้้้ 🔥"),
@@ -290,6 +291,7 @@ namespace DiscordBot
                 new Command(Command.PrefixType.None, "\\o\\", "", "/o/"),
                 new Command(Command.PrefixType.None, "/o/", "", "\\o\\"),
                 new Command(Command.PrefixType.None, "\\o/", "", "\\o/"),
+                new Command(Command.PrefixType.None, "/lenny", "", "( ͡° ͜ʖ ͡°)"),
                 new Command(Command.PrefixType.None, "$$$", "", Trivia.Points)
             });
         }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 
 namespace DiscordBot
 {
@@ -29,6 +30,7 @@ namespace DiscordBot
         {
             if (Buffers.Count < MaxQueued)
             {
+                Array.Clear(ToReturn, 0, ToReturn.Length);
                 Buffers.Push(ToReturn);
             }
         }

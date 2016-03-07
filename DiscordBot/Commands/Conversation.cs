@@ -285,6 +285,18 @@ namespace DiscordBot.Commands
             Bot.Send(e.Channel, Lewd[new Random().Next(0, Lewd.Length)]);
         }
 
+        public static void Meme(object s, MessageEventArgs e)
+        {
+            char[] CharArray = ((string)s).ToUpper().ToCharArray();
+            string Text = string.Join(" ", CharArray);
+            for (int i = 1; i < CharArray.Length; i++)
+            {
+                Text += "\n" + CharArray[i];
+            }
+            
+            Bot.Send(e.Channel, Text);
+        }
+
         private static string[] Shitposts = new string[] {
                 "What the fuck did you just fucking say about dogman, you little bitch? I’ll have you know I graduated top of dankmemers in the anime_irl discourse channel, and I’ve been involved in numerous collective maymay creations, and I have over 300 confirmed shitposts. I am made into a meme 4chan and I’m the top shitposter on the entire internet. You are nothing to me but just another OC creator. I will copy your fucking memes with speeds the likes of which has never been seen before on this internet, mark my fucking words. You think you can get away with creating OC for us on the Internet? Think again, fucker. As we speak I am contacting my secret network of autists across the USA through Google Ultron and your IP is being traced right now by Adobe Reader so you better prepare for broken arms, maggot. The broken arms that wipe out the pathetic nonexistent thing you call your sexlife. You’re fucking dank, kid. I can be anywhere, anytime, and I can rip off OC in over seven hundred ways,  and that’s just with my mouse. Not only am I extensively trained in keyboard shortcuts, but I have access to the entire collection of macros and I will use it to its full extent to repost your miserable memes on reddit, you little shit. If only you could have known what unholy retribution your little “clever” meme was about to bring down upon you, maybe you would have kept reposting. But you couldn’t, you didn’t, and now you’re paying the price, you goddamn normie. I will send all mods to you and you will drown in abusive content reports. You’re fucking dead, memer.",
                 "Here's the thing. You said a 'trilby is a fedora.' Is it in the same family? Yes. No one's arguing that. As someone who is an atheist who studies euphoria, I am telling you, specifically, in atheism, no one calls trilbys fedoras. If you want to be 'specific' like you said, then you should too. They're not the same thing. If you're saying 'fedora family' you're referring to the euphoric grouping of le reddit army, which includes things from neckbearded gentlesirs to highly intelligent intellectual like Smoke Degrasse Tyson, Reddit's Chief Supreme Ambassador of atheism and logic, and myself, the Deputy of Science and Crows. So your reasoning for calling a trilby a fedora is because random people 'say that only neckbeards wear fedoras?' Let's get Mountain Dew and Doritos in there, then, too. It's okay to just admit you're wrong, you know?",
