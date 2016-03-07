@@ -79,12 +79,12 @@ namespace DiscordBot
                 Channels = 2,
                 EnableEncryption = false,
                 EnableMultiserver = true,
-                Bitrate = Discord.Audio.AudioServiceConfig.MaxBitrate,
+                Bitrate = AudioServiceConfig.MaxBitrate,
                 BufferLength = 50,
                 Mode = AudioMode.Outgoing
             }));
 
-            MusicHandler.Buffers = new ByteBuffer(1920 * 2, 20000);
+            MusicHandler.Buffers = new ByteBuffer(1920 * 2, (int)Math.Pow(2, 16));
             "Discord Audio Client Service Loaded".Log();
 
             Client.Log.Message += ClientEvents.LogMessage;
@@ -195,7 +195,7 @@ namespace DiscordBot
         {
             CommandParser.Categories.Add(string.Empty, new Command[] {
                 new Command(Command.PrefixType.Command, new string[] { "help", "commands" }, "Shows all your commands", CommandParser.Help),
-                new Command(Command.PrefixType.Command, "toggle", "Turns a category on/off", CommandParser.ToggleCat)
+                new Command(Command.PrefixType.Command, new string[] { "toggle", "togglecat" }, "Turns a category on/off", CommandParser.ToggleCat)
             });
 
             CommandParser.Categories.Add(typeof(Administration).Name, new Command[] {

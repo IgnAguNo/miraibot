@@ -9,6 +9,7 @@ namespace DiscordBot
 {
     class MusicProcessor
     {
+        private static int MaxBuffer = (int)Math.Pow(2, 15);
         private const ushort BufferSize = 1920 * 2;
 
         public SongData Song;
@@ -19,8 +20,7 @@ namespace DiscordBot
         public long TotalSize = 0;
         public bool FinishedBuffer = false;
 
-        private const int Prebuffer = 16;
-        public Semaphore Waiter = new Semaphore(Prebuffer, Prebuffer + 1);
+        public Semaphore Waiter = new Semaphore(MaxBuffer, MaxBuffer + 1);
 
         public MusicProcessor(SongData PlaySong)
         {
@@ -72,7 +72,7 @@ namespace DiscordBot
 
                     if (Read == 0)
                     {
-                        if (++Fails == 20)
+                        if (++Fails == 10)
                         {
                             QueuedBuffers.Enqueue(ReadBuffer);
                             break;

@@ -176,11 +176,13 @@ namespace DiscordBot.Commands
             }
 
             List<SongData> Removed = ServerData.Servers[e.User.Server.Id].Music.Remove(ToRemove);
+            string RemovedText = "**Removed**\n";
             foreach (SongData Song in Removed)
             {
-                Bot.Send(e.Channel, "Removed `" + Song.Name + "`");
-                Task.Delay(100).Wait();
+                RemovedText += "`" + Song.Name + "`\n";
             }
+
+            Bot.Send(e.Channel, RemovedText);
         }
 
         public static void Volume(object s, MessageEventArgs e)
