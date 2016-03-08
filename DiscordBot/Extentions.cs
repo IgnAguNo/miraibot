@@ -14,13 +14,13 @@ namespace DiscordBot
             try
             {
                 string Input = ObjInput.ToString();
-                if (Input.Length <= (MaxPart * 2 + 3))
+                if (Input.Length <= (MaxPart * 2 + 2))
                 {
                     return Input;
                 }
 
                 Input = Input.Replace("\n", String.Empty).Replace("\r", String.Empty);
-                return Input.Substring(0, MaxPart) + "..." + Input.Substring(Input.Length - MaxPart);
+                return Input.Substring(0, MaxPart) + ".." + Input.Substring(Input.Length - MaxPart);
             }
             catch
             {

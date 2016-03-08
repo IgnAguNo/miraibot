@@ -19,7 +19,7 @@ namespace DiscordBot
         
         public bool FinishedBuffer = false;
 
-        public Semaphore Waiter = new Semaphore(MaxBuffer, MaxBuffer + 1);
+        public Semaphore Waiter = new Semaphore(MaxBuffer, MaxBuffer + 2);
 
         public MusicProcessor(SongData PlaySong)
         {

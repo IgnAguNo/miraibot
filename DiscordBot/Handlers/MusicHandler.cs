@@ -15,7 +15,7 @@ namespace DiscordBot.Handlers
         
         private IAudioClient AudioClient;
         private ConcurrentQueue<SongData> SongQueue = new ConcurrentQueue<SongData>();
-        private const int MaxQueue = 50;
+        private const int MaxQueue = 99;
 
         private MusicProcessor CurrentSong;
         private Task Sending = null;
@@ -154,11 +154,19 @@ namespace DiscordBot.Handlers
             }
         }
 
-        public void Enqueue(string Name, string Url)
+        public void Enqueue(string Url, Channel Channel)
+            => Enqueue(Url, Url, Channel);
+
+        public void Enqueue(string Name, string Url, Channel Channel)
         {
             if (SongQueue.Count < MaxQueue)
             {
                 SongQueue.Enqueue(new SongData(Name, Url));
+                Send(Channel, "Added `" + Name + "`");
+            }
+            else
+            {
+                Send(Channel, "The queue has reached its limit");
             }
         }
 
@@ -176,7 +184,7 @@ namespace DiscordBot.Handlers
 
         public SongData Push(int Place)
         {
-            SongData Pushed = new SongData("Not found", String.Empty);
+            SongData Pushed = new SongData("Not found", string.Empty);
 
             ConcurrentQueue<SongData> NewQueue = new ConcurrentQueue<SongData>();
             List<SongData> Songs = new List<SongData>(SongQueue.ToArray());
@@ -195,7 +203,7 @@ namespace DiscordBot.Handlers
                 }
             }
 
-            if (Pushed.Uri != String.Empty)
+            if (Pushed.Uri != string.Empty)
             {
                 SongQueue = NewQueue;
             }
@@ -257,10 +265,15 @@ namespace DiscordBot.Handlers
             int Count = 0;
             foreach (SongData Entry in Queued)
             {
-                Text += (++Count).ToString() + ". *" + Entry.Name + "*\n";
+                Text += (++Count).ToString() + ". *" + Entry.Name.Compact(20) + "*\n";
             }
 
             Send(Channel, Text);
+        }
+
+        public void Clear()
+        {
+            SongQueue = new ConcurrentQueue<SongData>();
         }
 
         public int Save(string DataFile)

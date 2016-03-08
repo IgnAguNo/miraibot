@@ -87,12 +87,6 @@ namespace DiscordBot
             MusicHandler.Buffers = new ByteBuffer(1920 * 2, (int)Math.Pow(2, 16));
             "Discord Audio Client Service Loaded".Log();
 
-            Client.Log.Message += ClientEvents.LogMessage;
-            Client.MessageReceived += ClientEvents.MessageReceived;
-            Client.UserJoined += ClientEvents.UserJoined;
-            Client.UserLeft += ClientEvents.UserLeft;
-            "Handlers Loaded".Log();
-            
             Client.ExecuteAndWait(async () =>
             {
                 await Client.Connect(Mail, Password);
@@ -124,6 +118,12 @@ namespace DiscordBot
                 InitCommands();
                 "Initialised commands".Log();
 
+                Client.Log.Message += ClientEvents.LogMessage;
+                Client.MessageReceived += ClientEvents.MessageReceived;
+                Client.UserJoined += ClientEvents.UserJoined;
+                Client.UserLeft += ClientEvents.UserLeft;
+                "Handlers Loaded".Log();
+
                 Timer Updater = new Timer(1000);
                 Updater.Elapsed += (s, e) =>
                 {
@@ -131,7 +131,7 @@ namespace DiscordBot
                     {
                         Console.Title = $"[@{Client.CurrentUser.Name}] {CommandParser.Executed} Command Executed - {Msgs} Messages Sent - {Spam} Spam Blocked - Running {(DateTime.Now - Start).ToString("%d")} days, {(DateTime.Now - Start).ToString(@"%h\:mm\:ss")}";
                         int Playing = ServerData.Servers.Count(x => x.Value.Music.Playing);
-                        Client.SetGame(Playing + " song" + (Playing == 1 ? "" : "s"));
+                        Client.SetGame("music in " + Playing + " server" + (Playing == 1 ? "" : "s"));
                     }
                     catch (Exception Ex)
                     {
@@ -149,7 +149,7 @@ namespace DiscordBot
         {
             try
             {
-                if (Message == null || Message == string.Empty)
+                if (Channel == null || Message == null || Message == string.Empty)
                 {
                     return;
                 }
@@ -200,13 +200,13 @@ namespace DiscordBot
 
             CommandParser.Categories.Add(typeof(Administration).Name, new Command[] {
                 new Command(Command.PrefixType.Command, "minrank", "Sets a necessary rank to use a command", Administration.Permission),
-                new Command(Command.PrefixType.Command, "giverank", "Sets someone's rank", Administration.Rank),
+                new Command(Command.PrefixType.Command, new string[] { "giverank", "setrank" }, "Sets someone's rank", Administration.Rank),
                 new Command(Command.PrefixType.Command, "ranks", "See all special ranks in this server", Administration.Ranks),
 
                 new Command(Command.PrefixType.Command, new string[] { "sleep", "shutdown" }, "Shuts me down", Administration.Sleep),
                 new Command(Command.PrefixType.Command, "setname", "Changes my name", Administration.SetName),
                 new Command(Command.PrefixType.Command, "setavatar", "Changes my avatar", Administration.SetAvatar),
-                new Command(Command.PrefixType.Command, "clear", "Removes some message history", Administration.Clear),
+                new Command(Command.PrefixType.Command, "prune", "Removes some message history", Administration.Prune),
                 new Command(Command.PrefixType.Command, "fix", "Clears the message queue", Administration.Fix)
             });
 
@@ -222,6 +222,7 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, new string[] { "playlist", "lq", "queue" }, "Lists the current playlist", Music.Playlist),
                 new Command(Command.PrefixType.Command, new string[] { "skip", "next", "n" }, "Skips the current song", Music.Skip),
                 new Command(Command.PrefixType.Command, new string[] { "shuffle", "s" }, "Shuffles the current queue", Music.Shuffle),
+                new Command(Command.PrefixType.Command, "clear", "Clears the current queue", Music.Clear),
                 new Command(Command.PrefixType.Command, "save", "Saves the current playlist", Music.Save),
                 new Command(Command.PrefixType.Command, "load", "Loads the current playlist from", Music.Load)
             });

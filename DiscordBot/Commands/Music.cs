@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using VideoLibrary;
 
 namespace DiscordBot.Commands
@@ -53,8 +52,7 @@ namespace DiscordBot.Commands
                             string Name = Response["title"].ToString();
                             if (Response["streamable"].ToString().ToLower() != "false")
                             {
-                                ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Response["stream_url"].ToString() + "?client_id=" + Bot.SoundCloudAPI);
-                                Bot.Send(e.Channel, "Added `" + Name + "`");
+                                ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Response["stream_url"].ToString() + "?client_id=" + Bot.SoundCloudAPI, e.Channel);
                             }
                             else
                             {
@@ -93,15 +91,13 @@ namespace DiscordBot.Commands
                         }
 
                         string Name = Video.Title.Substring(0, Video.Title.Length - 10);
-                        ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Video.Uri);
-                        Bot.Send(e.Channel, "Added `" + Name + "`");
+                        ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Video.Uri, e.Channel);
                     }
                 }
             }
             else
             {
-                ServerData.Servers[e.User.Server.Id].Music.Enqueue(Query.Compact(), Query);
-                Bot.Send(e.Channel, "Added `" + Query.Compact() + "`");
+                ServerData.Servers[e.User.Server.Id].Music.Enqueue(Query, e.Channel);
             }
         }
 
@@ -119,8 +115,8 @@ namespace DiscordBot.Commands
                 {
                     if (int.TryParse(StringNum.Trim(), out Num) && Num > 0 && Num <= Files.Length)
                     {
-                        string Name = Files[Num - 1].Substring(MusicRoot.Length).Compact();
-                        ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Files[Num - 1]);
+                        string Name = Files[Num - 1].Substring(MusicRoot.Length);
+                        ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Files[Num - 1], e.Channel);
                         Added.Add(Name);
                     }
                 }
@@ -141,9 +137,9 @@ namespace DiscordBot.Commands
                 }
                 else if (Files.Length == 1)
                 {
-                    string Name = Files[0].Substring(MusicRoot.Length).Compact();
+                    string Name = Files[0].Substring(MusicRoot.Length);
 
-                    ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Files[0]);
+                    ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Files[0], e.Channel);
                     Bot.Send(e.Channel, "Added `" + Name + "`");
                 }
                 else
@@ -221,19 +217,41 @@ namespace DiscordBot.Commands
         public static void Shuffle(object s, MessageEventArgs e)
         {
             ServerData.Servers[e.Server.Id].Music.Shuffle();
-            Bot.Send(e.Channel, "Shuffled! Type `#playlist` to see the new playlist");
+            ServerData.Servers[e.Server.Id].Music.SendPlaylist(e.Channel);
         }
 
+        public static void Clear(object s, MessageEventArgs e)
+        {
+            ServerData.Servers[e.Server.Id].Music.Clear();
+            ServerData.Servers[e.Server.Id].Music.SendPlaylist(e.Channel);
+        }
+
+        private static Regex AlphaNum = new Regex("[^a-zA-Z0-9 -]");
         public static void Save(object s, MessageEventArgs e)
         {
-            string Playlist = "data.playlist" + e.Server.Id.ToString() + ".txt";
-            int Count = ServerData.Servers[e.Server.Id].Music.Save(Playlist);
+            string Identifier = e.Server.Id.ToString();
+
+            string Query = AlphaNum.Replace(((string)s).Trim().ToLower(), "");
+            if (Query != string.Empty)
+            {
+                Identifier += "." + Query;
+            }
+
+            int Count = ServerData.Servers[e.Server.Id].Music.Save("data.playlist." + Identifier + ".txt");
             Bot.Send(e.Channel, "Saved the playlist (" + Count + " songs). Use `#load` to load it again");
         }
 
         public static void Load(object s, MessageEventArgs e)
         {
-            string Playlist = "data.playlist" + e.Server.Id.ToString() + ".txt";
+            string Identifier = e.Server.Id.ToString();
+
+            string Query = AlphaNum.Replace(((string)s).Trim().ToLower(), "");
+            if (Query != string.Empty)
+            {
+                Identifier += "." + Query;
+            }
+
+            string Playlist = "data.playlist." + Identifier + ".txt";
             if (File.Exists(Playlist))
             {
                 int Count = ServerData.Servers[e.Server.Id].Music.Load(Playlist);

@@ -99,7 +99,7 @@ namespace DiscordBot.Commands
             await Bot.Client.CurrentUser.Edit(Bot.Password, avatar: stream);
         }
 
-        public static async void Clear(object s, MessageEventArgs e)
+        public static async void Prune(object s, MessageEventArgs e)
         {
             int MsgCount = 0;
             List<ulong> ClearUsers = new List<ulong>();
