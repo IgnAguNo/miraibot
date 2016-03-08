@@ -161,13 +161,13 @@ namespace DiscordBot.Commands
 
         public static void AnimeInfo(object sObj, MessageEventArgs e)
         {
-            string s = (string)sObj;
+            string s = ((string)sObj).Replace('/', ' ');
             RestClient API = GetAniApi();
 
             RestRequest SearchRequest = new RestRequest("/anime/search/" + Uri.EscapeUriString(s));
             SearchRequest.AddParameter("access_token", AniToken);
             string SearchResString = API.Execute(SearchRequest).Content;
-
+            
             if (SearchResString.Trim() != string.Empty && JToken.Parse(SearchResString) is JArray)
             {
                 RestRequest InfoRequest = new RestRequest("/anime/" + JArray.Parse(SearchResString)[0]["id"]);
@@ -199,7 +199,7 @@ namespace DiscordBot.Commands
 
         public static void MangaInfo(object sObj, MessageEventArgs e)
         {
-            string s = (string)sObj;
+            string s = ((string)sObj).Replace('/', ' ');
             RestClient API = GetAniApi();
 
             RestRequest SearchRequest = new RestRequest("/manga/search/" + Uri.EscapeUriString(s));

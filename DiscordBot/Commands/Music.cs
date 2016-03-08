@@ -43,7 +43,7 @@ namespace DiscordBot.Commands
                     try
                     {
                         string SoundCloudResponse = await ("http://api.soundcloud.com/resolve?url=" + Query + "&client_id=" + Bot.SoundCloudAPI).ResponseAsync();
-                        if (SoundCloudResponse == String.Empty || !SoundCloudResponse.StartsWith("{\"kind\":\"track\""))
+                        if (SoundCloudResponse == string.Empty || !SoundCloudResponse.StartsWith("{\"kind\":\"track\""))
                         {
                             Bot.Send(e.Channel, "Sorry, the SoundCloud link doesn't seem to be working");
                         }
@@ -51,8 +51,15 @@ namespace DiscordBot.Commands
                         {
                             JObject Response = JObject.Parse(SoundCloudResponse);
                             string Name = Response["title"].ToString();
-                            ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Response["stream_url"].ToString() + "?client_id=" + Bot.SoundCloudAPI);
-                            Bot.Send(e.Channel, "Added `" + Name + "`");
+                            if (Response["streamable"].ToString().ToLower() != "false")
+                            {
+                                ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Response["stream_url"].ToString() + "?client_id=" + Bot.SoundCloudAPI);
+                                Bot.Send(e.Channel, "Added `" + Name + "`");
+                            }
+                            else
+                            {
+                                Bot.Send(e.Channel, "This file cannot be streamed");
+                            }
                         }
                     }
                     catch (Exception Ex)

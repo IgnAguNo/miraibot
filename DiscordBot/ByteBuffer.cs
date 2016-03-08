@@ -28,7 +28,7 @@ namespace DiscordBot
 
         public void Return(byte[] ToReturn)
         {
-            if (Buffers.Count < MaxQueued)
+            if (ToReturn != null && ToReturn.Length == BufferSize && Buffers.Count < MaxQueued)
             {
                 Array.Clear(ToReturn, 0, ToReturn.Length);
                 Buffers.Push(ToReturn);

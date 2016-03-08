@@ -16,8 +16,7 @@ namespace DiscordBot
         public bool Skip = false;
         public Queue<byte[]> QueuedBuffers = new Queue<byte[]>();
         private Process Ffmpeg;
-
-        public long TotalSize = 0;
+        
         public bool FinishedBuffer = false;
 
         public Semaphore Waiter = new Semaphore(MaxBuffer, MaxBuffer + 1);
@@ -51,7 +50,11 @@ namespace DiscordBot
                 {
                     if (Skip)
                     {
-                        MusicHandler.Buffers.Return(ReadBuffer);
+                        if (ReadBuffer.Length != 0)
+                        {
+                            MusicHandler.Buffers.Return(ReadBuffer);
+                        }
+
                         break;
                     }
 
@@ -83,13 +86,12 @@ namespace DiscordBot
                     else
                     {
                         ReadBufferUsed += Read;
-                        TotalSize += Read;
                         Fails = 0;
                     }
                 }
 
                 FinishedBuffer = true;
-                ((Fails == 10 ? "Finished" : "Stopped") + " buffering " + Song.Name + " (" + TotalSize / 1.MB() + "MB)").Log();
+                ((Fails == 10 ? "Finished" : "Stopped") + " buffering " + Song.Name).Log();
             }
             catch (Exception Ex)
             {

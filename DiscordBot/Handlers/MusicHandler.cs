@@ -44,7 +44,6 @@ namespace DiscordBot.Handlers
 
             byte[] CurrentSend = null;
             byte[] NextSend = null;
-            int TotalRead = 0;
 
             while (true)
             {
@@ -67,8 +66,6 @@ namespace DiscordBot.Handlers
                             {
                                 SendPlaylist(Channel);
                             }
-
-                            TotalRead = 0;
                         }
                         else
                         {
@@ -91,17 +88,20 @@ namespace DiscordBot.Handlers
                             CurrentSend = NextSend;
                             NextSend = null;
                         }
-                        else if (CurrentSong.TotalSize <= TotalRead && CurrentSong.FinishedBuffer)
-                        {
-                            Skip();
-                        }
 
                         if (CurrentSong.QueuedBuffers.Count > 0)
                         {
-                            NextSend = CurrentSong.QueuedBuffers.Dequeue().AdjustVolume(Volume);
+                            NextSend = CurrentSong.QueuedBuffers.Dequeue();
                             CurrentSong.Waiter.Release(1);
 
-                            TotalRead += NextSend.Length;
+                            if (NextSend != null)
+                            {
+                                NextSend = NextSend.AdjustVolume(Volume);
+                            }
+                        }
+                        else if (CurrentSong.FinishedBuffer)
+                        {
+                            CurrentSong.Skip = true;
                         }
                     }
                 }
