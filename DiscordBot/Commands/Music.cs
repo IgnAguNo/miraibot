@@ -16,7 +16,7 @@ namespace DiscordBot.Commands
         {
             if (e.User.VoiceChannel != null)
             {
-                MusicHandler Music = ServerData.Servers[e.User.Server.Id].Music;
+                MusicHandler Music = ServerData.Servers[e.Server.Id].Music;
                 await Music.ConnectClient(e.User.VoiceChannel);
             }
             else
@@ -27,7 +27,7 @@ namespace DiscordBot.Commands
 
         public static async void Leave(object s, MessageEventArgs e)
         {
-            ServerData ServerData = ServerData.Servers[e.User.Server.Id];
+            ServerData ServerData = ServerData.Servers[e.Server.Id];
             await ServerData.Music.DisconnectClient();
         }
 
@@ -52,7 +52,7 @@ namespace DiscordBot.Commands
                             string Name = Response["title"].ToString();
                             if (Response["streamable"].ToString().ToLower() != "false")
                             {
-                                ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Response["stream_url"].ToString() + "?client_id=" + Bot.SoundCloudAPI, e.Channel);
+                                ServerData.Servers[e.Server.Id].Music.Enqueue(Name, Response["stream_url"].ToString() + "?client_id=" + Bot.SoundCloudAPI, e.Channel);
                             }
                             else
                             {
@@ -91,13 +91,13 @@ namespace DiscordBot.Commands
                         }
 
                         string Name = Video.Title.Substring(0, Video.Title.Length - 10);
-                        ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Video.Uri, e.Channel);
+                        ServerData.Servers[e.Server.Id].Music.Enqueue(Name, Video.Uri, e.Channel);
                     }
                 }
             }
             else
             {
-                ServerData.Servers[e.User.Server.Id].Music.Enqueue(Query, e.Channel);
+                ServerData.Servers[e.Server.Id].Music.Enqueue(Query, e.Channel);
             }
         }
 
@@ -116,7 +116,7 @@ namespace DiscordBot.Commands
                     if (int.TryParse(StringNum.Trim(), out Num) && Num > 0 && Num <= Files.Length)
                     {
                         string Name = Files[Num - 1].Substring(MusicRoot.Length);
-                        ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Files[Num - 1], e.Channel);
+                        ServerData.Servers[e.Server.Id].Music.Enqueue(Name, Files[Num - 1], e.Channel);
                         Added.Add(Name);
                     }
                 }
@@ -139,7 +139,7 @@ namespace DiscordBot.Commands
                 {
                     string Name = Files[0].Substring(MusicRoot.Length);
 
-                    ServerData.Servers[e.User.Server.Id].Music.Enqueue(Name, Files[0], e.Channel);
+                    ServerData.Servers[e.Server.Id].Music.Enqueue(Name, Files[0], e.Channel);
                     Bot.Send(e.Channel, "Added `" + Name + "`");
                 }
                 else
@@ -160,7 +160,7 @@ namespace DiscordBot.Commands
             int Place = 0;
             if (int.TryParse((string)s, out Place))
             {
-                Bot.Send(e.Channel, "Pushed `" + ServerData.Servers[e.User.Server.Id].Music.Push(Place).Name + "` to the top");
+                Bot.Send(e.Channel, "Pushed `" + ServerData.Servers[e.Server.Id].Music.Push(Place).Name + "` to the top");
             }
         }
 
@@ -178,7 +178,7 @@ namespace DiscordBot.Commands
                 }
             }
 
-            List<SongData> Removed = ServerData.Servers[e.User.Server.Id].Music.Remove(ToRemove);
+            List<SongData> Removed = ServerData.Servers[e.Server.Id].Music.Remove(ToRemove);
             string RemovedText = "**Removed**\n";
             foreach (SongData Song in Removed)
             {
@@ -195,23 +195,23 @@ namespace DiscordBot.Commands
             int Parse;
             if (int.TryParse(Query, out Parse) && Parse >= 0 && Parse <= 15)
             {
-                ServerData.Servers[e.User.Server.Id].Music.Volume = (float)Parse / 10;
+                ServerData.Servers[e.Server.Id].Music.Volume = (float)Parse / 10;
             }
         }
 
         public static void CurrentSong(object s, MessageEventArgs e)
         {
-            ServerData.Servers[e.User.Server.Id].Music.SendCurrentSong(e.Channel);
+            ServerData.Servers[e.Server.Id].Music.SendCurrentSong(e.Channel);
         }
 
         public static void Playlist(object s, MessageEventArgs e)
         {
-            ServerData.Servers[e.User.Server.Id].Music.SendPlaylist(e.Channel);
+            ServerData.Servers[e.Server.Id].Music.SendPlaylist(e.Channel);
         }
 
         public static void Skip(object s, MessageEventArgs e)
         {
-            ServerData.Servers[e.User.Server.Id].Music.Skip();
+            ServerData.Servers[e.Server.Id].Music.Skip();
         }
 
         public static void Shuffle(object s, MessageEventArgs e)
