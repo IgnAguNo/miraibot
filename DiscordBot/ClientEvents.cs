@@ -1,4 +1,5 @@
-﻿﻿using Discord;
+﻿using Discord;
+using DiscordBot.Commands;
 using DiscordBot.Handlers;
 using System;
 
@@ -67,7 +68,7 @@ namespace DiscordBot
         {
             Db.ForceAddAccount(e.User.Id);
 
-            foreach (Channel Channel in ServerData.Servers[e.Server.Id].ChannelsWithCategory("Conversation"))
+            foreach (Channel Channel in ServerData.Servers[e.Server.Id].ChannelsWithCategory(typeof(Conversation).Name))
             {
                 Bot.Send(Channel, "Hi " + e.User.Mention + "! Welcome to the server :)", null, false);
             }
@@ -75,7 +76,7 @@ namespace DiscordBot
 
         public static void UserLeft(object s, UserEventArgs e)
         {
-            foreach (Channel Channel in ServerData.Servers[e.Server.Id].ChannelsWithCategory("Conversation"))
+            foreach (Channel Channel in ServerData.Servers[e.Server.Id].ChannelsWithCategory(typeof(Conversation).Name))
             {
                 Bot.Send(Channel, "I hope I'll see you again soon, " + e.User.Name + "!", null, false);
             }

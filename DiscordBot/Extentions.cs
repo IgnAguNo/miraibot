@@ -125,5 +125,11 @@ namespace DiscordBot
             Cmd.ExecuteNonQuery();
             Cmd.Dispose();
         }
+
+        public static bool IsValidUrl(this string Text)
+        {
+            Uri WebRes;
+            return Uri.TryCreate(Text, UriKind.Absolute, out WebRes);
+        }
     }
 }

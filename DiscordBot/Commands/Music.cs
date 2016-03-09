@@ -1,12 +1,9 @@
 ﻿using Discord;
 using DiscordBot.Handlers;
-using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using VideoLibrary;
 
 namespace DiscordBot.Commands
 {
@@ -31,10 +28,12 @@ namespace DiscordBot.Commands
             await ServerData.Music.DisconnectClient();
         }
 
-        public static async void Add(object s, MessageEventArgs e)
+        public static void Add(object s, MessageEventArgs e)
         {
             string Query = (string)s;
+            ServerData.Servers[e.Server.Id].Music.Enqueue(Query, e.Channel);
 
+            /*
             if (!Query.EndsWith(".mp3") && !Query.EndsWith(".mp4") && !Query.EndsWith(".webm") && !Query.EndsWith(".flac"))
             {
                 if (Regex.IsMatch(Query, "(.*)(soundcloud.com|snd.sc)(.*)"))
@@ -98,13 +97,12 @@ namespace DiscordBot.Commands
             else
             {
                 ServerData.Servers[e.Server.Id].Music.Enqueue(Query, e.Channel);
-            }
+            }*/
         }
 
         private static string[] Files = null;
         public static void Local(object s, MessageEventArgs e)
         {
-            string MusicRoot = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music\\";
             string Search = ((string)s).ToLower();
 
             List<string> Added = new List<string>();
@@ -115,8 +113,8 @@ namespace DiscordBot.Commands
                 {
                     if (int.TryParse(StringNum.Trim(), out Num) && Num > 0 && Num <= Files.Length)
                     {
-                        string Name = Files[Num - 1].Substring(MusicRoot.Length);
-                        ServerData.Servers[e.Server.Id].Music.Enqueue(Name, Files[Num - 1], e.Channel);
+                        string Name = Files[Num - 1].Substring(SongData.MusicDir.Length);
+                        ServerData.Servers[e.Server.Id].Music.Enqueue(Files[Num - 1], e.Channel, true);
                         Added.Add(Name);
                     }
                 }
@@ -124,30 +122,24 @@ namespace DiscordBot.Commands
                 Files = null;
             }
 
-            if (Added.Count > 0)
+            if (Added.Count == 0)
             {
-                Bot.Send(e.Channel, "Added: \n`" + string.Join("\n", Added) + "`");
-            }
-            else
-            {
-                Files = Directory.GetFiles(MusicRoot).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(Search)).ToArray();
+                Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(Search)).ToArray();
                 if (Files.Length == 0)
                 {
                     Bot.Send(e.Channel, Conversation.CantFind);
                 }
                 else if (Files.Length == 1)
                 {
-                    string Name = Files[0].Substring(MusicRoot.Length);
-
-                    ServerData.Servers[e.Server.Id].Music.Enqueue(Name, Files[0], e.Channel);
-                    Bot.Send(e.Channel, "Added `" + Name + "`");
+                    string Name = Files[0].Substring(SongData.MusicDir.Length);
+                    ServerData.Servers[e.Server.Id].Music.Enqueue(Files[0], e.Channel, true);
                 }
                 else
                 {
                     string Info = "";
                     for (int i = 0; i < Files.Length; i++)
                     {
-                        Info += (i + 1) + ". `" + Files[i].Substring(MusicRoot.Length).Compact() + "`\n";
+                        Info += (i + 1) + ". `" + Files[i].Substring(SongData.MusicDir.Length).Compact() + "`\n";
                     }
 
                     Bot.Send(e.Channel, "Local: \n" + Info);
@@ -160,7 +152,7 @@ namespace DiscordBot.Commands
             int Place = 0;
             if (int.TryParse((string)s, out Place))
             {
-                Bot.Send(e.Channel, "Pushed `" + ServerData.Servers[e.Server.Id].Music.Push(Place).Name + "` to the top");
+                ServerData.Servers[e.Server.Id].Music.Push(Place, e.Channel);
             }
         }
 
@@ -178,14 +170,7 @@ namespace DiscordBot.Commands
                 }
             }
 
-            List<SongData> Removed = ServerData.Servers[e.Server.Id].Music.Remove(ToRemove);
-            string RemovedText = "**Removed**\n";
-            foreach (SongData Song in Removed)
-            {
-                RemovedText += "`" + Song.Name + "`\n";
-            }
-
-            Bot.Send(e.Channel, RemovedText);
+            ServerData.Servers[e.Server.Id].Music.Remove(ToRemove, e.Channel);
         }
 
         public static void Volume(object s, MessageEventArgs e)
@@ -229,12 +214,10 @@ namespace DiscordBot.Commands
         private static Regex AlphaNum = new Regex("[^a-zA-Z0-9 -]");
         public static void Save(object s, MessageEventArgs e)
         {
-            string Identifier = e.Server.Id.ToString();
-
-            string Query = AlphaNum.Replace(((string)s).Trim().ToLower(), "");
-            if (Query != string.Empty)
+            string Identifier = AlphaNum.Replace(((string)s).Trim().ToLower(), "");
+            if (Identifier == string.Empty)
             {
-                Identifier += "." + Query;
+                Identifier = e.Server.Id.ToString();
             }
 
             int Count = ServerData.Servers[e.Server.Id].Music.Save("data.playlist." + Identifier + ".txt");
