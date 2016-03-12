@@ -3,8 +3,6 @@ using Discord.Audio;
 using DiscordBot.Commands;
 using DiscordBot.Handlers;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,7 +28,7 @@ namespace DiscordBot
         {
             get
             {
-                return Bot.Client.CurrentUser.Mention;
+                return Client.CurrentUser.Mention;
             }
         }
         
@@ -214,7 +212,7 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, "join", "Joins your current voice channel", Music.Join),
                 new Command(Command.PrefixType.Command, "leave", "Leaves any voice channel", Music.Leave),
                 new Command(Command.PrefixType.Command, new string[] { "add", "q" }, "Adds a song title to the music queue", Music.Add),
-                new Command(Command.PrefixType.Command, new string[] { "local", "addlocal" }, "Adds a local song title to the music queue", Music.Local),
+                new Command(Command.PrefixType.Command, new string[] { "local", "addlocal", "l" }, "Adds a local song title to the music queue", Music.Local),
                 new Command(Command.PrefixType.Command, new string[] { "push", "p" }, "Pushes a song to the top of the music queue", Music.Push),
                 new Command(Command.PrefixType.Command, new string[] { "remove", "r" }, "Removes a song from the music queue", Music.Remove),
                 new Command(Command.PrefixType.Command, new string[] { "volume", "vol" }, "Changes the volume of the music player", Music.Volume),
@@ -240,9 +238,12 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, "osu", "Show someone's osu stats", Search.Osu),
                 new Command(Command.PrefixType.Command, new string[] { "avatar", "av" }, "Show someone's avatar", Search.Avatar),
                 new Command(Command.PrefixType.Command, new string[] { "define", "ud" }, "Search for a term", Search.Define),
-                new Command(Command.PrefixType.Command, new string[] { "lewd", "booru", "nsfw" }, "Search for a lewd image", Search.Lewd),
                 new Command(Command.PrefixType.Command, "anime", "Search for an anime - shorthand {name}", Search.AnimeInfo),
                 new Command(Command.PrefixType.Command, "manga", "Search for a manga - shorthand <name>", Search.MangaInfo)
+            });
+
+            CommandParser.Categories.Add(typeof(Lewd).Name, new Command[] {
+                new Command(Command.PrefixType.Command, new string[] { "lewd", "booru", "nsfw" }, "Search for a lewd image", Lewd.RandomLewd)
             });
 
             string Spam = "O - oooooooooo AAAAE - A - A - I - A - U - JO - oooooooooooo AAE - O - A - A - U - U - A - E - eee - ee - eee AAAAE - A - E - I - E - A - JO - ooo - oo - oo - oo EEEEO - A - AAA - AAAA";
@@ -254,7 +255,8 @@ namespace DiscordBot
             }
 
             CommandParser.Categories.Add(typeof(Conversation).Name, new Command[] {
-                new Command(Command.PrefixType.Mention, new string[] { "choose from" }, "Choose from a list", Conversation.Choose),
+                new Command(Command.PrefixType.Mention, new string[] { "hi", "hey", "hello" }, "Choose from a list", "Hi!"),
+                new Command(Command.PrefixType.Mention, "choose from", "Choose from a list", Conversation.Choose),
                 new Command(Command.PrefixType.Mention, "how are you", "Check if my owner is online", Conversation.Status),
                 new Command(Command.PrefixType.Mention, new string[] { "do you like me", "do you love me" }, "...", Conversation.Love),
                 new Command(Command.PrefixType.Mention, new string[] { "insult", "hate on" }, "Insult a person", Conversation.Insult),

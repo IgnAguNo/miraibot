@@ -27,6 +27,13 @@ namespace DiscordBot
             Init(Prefix, new string[] { Key }, Description, Handler);
         }
 
+        public Command(PrefixType Prefix, string[] Key, string Description, string Response)
+        {
+            Init(Prefix, Key, Description, (s, e) => {
+                Bot.Send(e.Channel, Response);
+            });
+        }
+
         public Command(PrefixType Prefix, string Key, string Description, string Response)
         {
             Init(Prefix, new string[] { Key }, Description, (s, e) => {

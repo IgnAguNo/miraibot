@@ -142,6 +142,7 @@
   <ItemGroup>
     <Compile Include="ByteBuffer.cs" />
     <Compile Include="ClientEvents.cs" />
+    <Compile Include="Commands\Lewd.cs" />
     <Compile Include="Db.cs" />
     <Compile Include="Extentions.cs" />
     <Compile Include="Handlers\IHandler.cs" />

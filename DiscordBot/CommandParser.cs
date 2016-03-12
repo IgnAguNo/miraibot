@@ -2,7 +2,6 @@
 using DiscordBot.Commands;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace DiscordBot
@@ -11,6 +10,7 @@ namespace DiscordBot
     {
         public static ulong Executed = 0;
         public static Dictionary<string, Command[]> Categories = new Dictionary<string, Command[]>();
+        private const string CmdPrefix = "#";
 
         public static void Handle(MessageEventArgs e)
         {
@@ -39,7 +39,7 @@ namespace DiscordBot
                 string Lower;
                 foreach (Command Cmd in Cmds)
                 {
-                    string Prefix = "#";
+                    string Prefix = CmdPrefix;
                     Lower = Raw.ToLower();
 
                     if (Cmd.Prefix != Command.PrefixType.None)
@@ -110,7 +110,7 @@ namespace DiscordBot
 
                 foreach (Command Cmd in Cat.Value)
                 {
-                    string Start = "#";
+                    string Start = CmdPrefix;
 
                     if (Cmd.Prefix == Command.PrefixType.None)
                     {

@@ -9,7 +9,7 @@ using VideoLibrary;
 
 namespace DiscordBot
 {
-    struct SongData
+    class SongData
     {
         public static string MusicDir = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music\\";
         private static string[] MusicExtentions = new string[] { "mp3", "mp4", "webm", "flac" };
@@ -65,7 +65,6 @@ namespace DiscordBot
                 {
                     Task<string> YtLink = Search.YoutubeResult(Query);
                     YtLink.Wait();
-                    YtLink.Result.Log();
 
                     if (YtLink.Result != string.Empty)
                     {
@@ -75,7 +74,6 @@ namespace DiscordBot
 
                         if (Video != null)
                         {
-                            Video.FullName.Log();
                             FullName = Video.Title.Substring(0, Video.Title.Length - 10);
                             Url = Video.Uri;
                             Found = true;

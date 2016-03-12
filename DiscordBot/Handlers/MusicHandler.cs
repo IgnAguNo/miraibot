@@ -220,7 +220,7 @@ namespace DiscordBot.Handlers
                 }
 
                 SongQueue = NewQueue;
-                Send(Channel, "Pushed " + Pushed.Name + " to the top");
+                Send(Channel, "Pushed `" + Pushed.Name + "` to the top");
             }
         }
 
@@ -246,7 +246,7 @@ namespace DiscordBot.Handlers
             if (Removed > 0)
             {
                 SongQueue = NewQueue;
-                Send(Channel, "Removed " + Removed + " songs");
+                Send(Channel, "Removed " + Removed + " song" + (Removed == 1 ? "" : "s"));
             }
         }
 
@@ -325,9 +325,19 @@ namespace DiscordBot.Handlers
             using (BinaryReader Reader = new BinaryReader(File.Open(DataFile, FileMode.Open)))
             {
                 Count = Reader.ReadInt32();
+                Task<SongData>[] Tasks = new Task<SongData>[Count];
+                
                 for (int i = 0; i < Count; i++)
                 {
-                    Queue.Enqueue(new SongData(Reader.ReadString(), Reader.ReadBoolean()));
+                    string Query = Reader.ReadString();
+                    bool Local = Reader.ReadBoolean();
+                    Tasks[i] = Task.Run(() => { return new SongData(Query, Local); });
+                }
+
+                foreach (Task<SongData> T in Tasks)
+                {
+                    T.Wait();
+                    Queue.Enqueue(T.Result);
                 }
             }
 
