@@ -16,7 +16,7 @@ namespace DiscordBot.Handlers
         
         private IAudioClient AudioClient;
         private ConcurrentQueue<SongData> SongQueue = new ConcurrentQueue<SongData>();
-        private const int MaxQueue = 30;
+        private const int MaxQueued = 30;
 
         private MusicProcessor CurrentSong;
         private Task Sending = null;
@@ -52,11 +52,6 @@ namespace DiscordBot.Handlers
                 {
                     if (CurrentSong != null && CurrentSong.Skip)
                     {
-                        /*foreach (Channel Channel in ServerData.Servers[AudioClient.Server.Id].ChannelsWithCategory("Music"))
-                        {
-                            Send(Channel, "Finished playing `" + CurrentSong.Song.Name + "`");
-                        }*/
-
                         CurrentSong.Dispose();
                         CurrentSong = null;
                     }
@@ -73,7 +68,6 @@ namespace DiscordBot.Handlers
                                 foreach (Channel Channel in ServerData.Servers[AudioClient.Server.Id].ChannelsWithCategory(typeof(Music).Name))
                                 {
                                     SendCurrentSong(Channel);
-                                    //SendPlaylist(Channel);
                                 }
                             }
                             else
@@ -170,7 +164,7 @@ namespace DiscordBot.Handlers
 
         public void Enqueue(string Query, Channel Channel, bool Local = false)
         {
-            if (SongQueue.Count < MaxQueue)
+            if (SongQueue.Count < MaxQueued)
             {
                 SongData Song = new SongData(Query, Local);
                 if (Song.Found)
@@ -180,12 +174,12 @@ namespace DiscordBot.Handlers
                 }
                 else
                 {
-                    Send(Channel, "Couldn't find `" + Song.Name + "`");
+                    Send(Channel, Conversation.CantFind);
                 }
             }
             else
             {
-                Send(Channel, "The queue has reached its limit");
+                Send(Channel, "The queue has reached its limit of " + MaxQueued + " songs");
             }
         }
 
@@ -193,7 +187,8 @@ namespace DiscordBot.Handlers
         {
             Random Rand = new Random();
             ConcurrentQueue<SongData> Queue = new ConcurrentQueue<SongData>();
-            foreach (SongData Song in new List<SongData>(SongQueue.ToArray()).OrderBy(x => Rand.Next()))
+            IEnumerable<SongData> Songs = SongQueue.ToArray().OrderBy(x => Rand.Next());
+            foreach (SongData Song in Songs)
             {
                 Queue.Enqueue(Song);
             }
@@ -204,8 +199,8 @@ namespace DiscordBot.Handlers
         public void Push(int Place, Channel Channel)
         {
             ConcurrentQueue<SongData> NewQueue = new ConcurrentQueue<SongData>();
-            List<SongData> Songs = new List<SongData>(SongQueue.ToArray());
-            if (Place > 0 && Songs.Count >= Place)
+            SongData[] Songs = SongQueue.ToArray();
+            if (Place > 0 && Songs.Length >= Place)
             {
                 SongData Pushed = Songs[Place - 1];
                 NewQueue.Enqueue(Songs[Place - 1]);
@@ -224,13 +219,41 @@ namespace DiscordBot.Handlers
             }
         }
 
+        public void Repeat(int Count, Channel Channel)
+        {
+            if (CurrentSong != null)
+            {
+                SongData[] Songs = SongQueue.ToArray();
+
+                if (Count + Songs.Length > MaxQueued)
+                {
+                    Count = MaxQueued - Songs.Length;
+                }
+
+                ConcurrentQueue<SongData> NewQueue = new ConcurrentQueue<SongData>();
+
+                for (int i = 0; i < Count; i++)
+                {
+                    NewQueue.Enqueue(CurrentSong.Song);
+                }
+
+                foreach (SongData Video in Songs)
+                {
+                    NewQueue.Enqueue(Video);
+                }
+
+                SongQueue = NewQueue;
+                Send(Channel, "Repeated `" + CurrentSong.Song.Name + "` " + Count + " times");
+            }
+        }
+
         public void Remove(List<int> Places, Channel Channel)
         {
             int Removed = 0;
             int i = 1;
 
             ConcurrentQueue<SongData> NewQueue = new ConcurrentQueue<SongData>();
-            List<SongData> Songs = new List<SongData>(SongQueue.ToArray());
+            SongData[] Songs = SongQueue.ToArray();
             foreach (SongData Video in Songs)
             {
                 if (Places.Contains(i++))
@@ -268,11 +291,6 @@ namespace DiscordBot.Handlers
 
         public void SendPlaylist(Channel Channel)
         {
-            /*if (CurrentSong != null)
-            {
-                Text += "Now Playing\n*" + CurrentSong.Song.Name + "*\n\n";
-            }*/
-
             SongData[] Queued = SongQueue.ToArray();
             string Text = Queued.Length + " Song(s) Queued\n";
 

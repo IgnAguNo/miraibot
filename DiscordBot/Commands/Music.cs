@@ -156,6 +156,20 @@ namespace DiscordBot.Commands
             }
         }
 
+        public static void Repeat(object s, MessageEventArgs e)
+        {
+            int Count = 1;
+            if ((string)s != string.Empty)
+            {
+                int.TryParse((string)s, out Count);
+            }
+
+            if (Count > 0)
+            {
+                ServerData.Servers[e.Server.Id].Music.Repeat(Count, e.Channel);
+            }
+        }
+
         public static void Remove(object s, MessageEventArgs e)
         {
             int Place;

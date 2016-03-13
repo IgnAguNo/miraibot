@@ -1,8 +1,9 @@
-﻿﻿using Discord;
+﻿using Discord;
 using Discord.Audio;
 using DiscordBot.Commands;
 using DiscordBot.Handlers;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,18 +13,11 @@ namespace DiscordBot
 {
     class Bot
     {
+        private static uint Msgs = 0;
+        private static uint Spam = 0;
+
+        public static DateTime Start = DateTime.Now;
         public static DiscordClient Client;
-
-        public const string CredentialsFile = "data.credentials.txt";
-
-        public static string Mail;
-        public static string Password;
-        public static ulong Owner; //Amir 74779725393825792
-        public static string GoogleAPI = "AIzaSyAVrXiAHfLEbQbNJP80zbTuW2jL0wuEigQ";
-        public static string SoundCloudAPI = "5c28ed4e5aef8098723bcd665d09041d";
-        public static string MashapeAPI = "2OuTDTmiT6mshgokCwR10VwkNI40p125gP1jsnofSaiWBJFcUf";
-        public static string AniIdAPI = "amirz-i0ev1";
-        public static string AniSecretAPI = "E7HB4bm9SJ3wbfc5klnv1I";
         public static string Mention
         {
             get
@@ -31,15 +25,21 @@ namespace DiscordBot
                 return Client.CurrentUser.Mention;
             }
         }
-        
-        private static uint Msgs = 0;
-        private static uint Spam = 0;
-        
-        public static User OwnerAccount = null;
 
+        public const string CredentialsFile = "data.credentials.txt";
+
+        public static string Mail;
+        public static string Password;
+        public static ulong Owner; //Amir 74779725393825792
+        public static User OwnerAccount = null;
+        public static string GoogleAPI = "AIzaSyAVrXiAHfLEbQbNJP80zbTuW2jL0wuEigQ";
+        public static string SoundCloudAPI = "5c28ed4e5aef8098723bcd665d09041d";
+        public static string MashapeAPI = "2OuTDTmiT6mshgokCwR10VwkNI40p125gP1jsnofSaiWBJFcUf";
+        public static string AniIdAPI = "amirz-i0ev1";
+        public static string AniSecretAPI = "E7HB4bm9SJ3wbfc5klnv1I";
+        
         static void Main(string[] args)
         {
-            DateTime Start = DateTime.Now;
             Console.Title = "Loading..";
 
             /*
@@ -52,26 +52,23 @@ namespace DiscordBot
             /*
             */
 
-            try
+            if (!File.Exists(CredentialsFile))
             {
-                string[] Credentials = File.ReadAllText(CredentialsFile).Replace("\r", string.Empty).Split('\n');
-                Mail = Credentials[0];
-                Password = Credentials[1];
-
-                if (Credentials.Length != 3 || !ulong.TryParse(Credentials[2], out Owner))
-                {
-                    "Couldn't load owner id from credentials".Log();
-                }
-            }
-            catch (Exception Ex)
-            {
-                Ex.Log();
+                "data.credentials.txt not found".Log();
                 Console.ReadKey();
                 return;
             }
-            
-            Client = new DiscordClient();
 
+            string[] Credentials = File.ReadAllText(CredentialsFile).Replace("\r", string.Empty).Split('\n');
+            Mail = Credentials[0];
+            Password = Credentials[1];
+
+            if (Credentials.Length != 3 || !ulong.TryParse(Credentials[2], out Owner))
+            {
+                "Couldn't load owner id from credentials".Log();
+            }
+
+            Client = new DiscordClient();
             Client.AddService(new AudioService(new AudioServiceConfigBuilder()
             {
                 Channels = 2,
@@ -185,7 +182,12 @@ namespace DiscordBot
 
         public static async void Shutdown()
         {
-            await Task.Delay(300);
+            foreach (KeyValuePair<ulong, ServerData> KVP in ServerData.Servers)
+            {
+                await KVP.Value.Music.DisconnectClient();
+            }
+
+            await Task.Delay(250);
             await Client.Disconnect();
         }
 
@@ -214,6 +216,7 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, new string[] { "add", "q" }, "Adds a song title to the music queue", Music.Add),
                 new Command(Command.PrefixType.Command, new string[] { "local", "addlocal", "l" }, "Adds a local song title to the music queue", Music.Local),
                 new Command(Command.PrefixType.Command, new string[] { "push", "p" }, "Pushes a song to the top of the music queue", Music.Push),
+                new Command(Command.PrefixType.Command, new string[] { "repeat" }, "Repeats the currently playing song", Music.Repeat),
                 new Command(Command.PrefixType.Command, new string[] { "remove", "r" }, "Removes a song from the music queue", Music.Remove),
                 new Command(Command.PrefixType.Command, new string[] { "volume", "vol" }, "Changes the volume of the music player", Music.Volume),
                 new Command(Command.PrefixType.Command, new string[] { "playing", "song", "np" }, "Shows the current song", Music.CurrentSong),
