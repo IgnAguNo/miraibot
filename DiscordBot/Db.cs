@@ -1,7 +1,6 @@
 ﻿﻿using System;
 using System.Collections.Concurrent;
 using System.Data.SQLite;
-using System.IO;
 
 namespace DiscordBot
 {
@@ -11,7 +10,7 @@ namespace DiscordBot
         {
             get
             {
-                SQLiteConnection Connect = new SQLiteConnection("data source=../Release/discord.sqlite; Version=3;");
+                SQLiteConnection Connect = new SQLiteConnection("data source=" + Bot.DbDir + "discord.sqlite; Version=3;");
                 Connect.Open();
                 return Connect;
             }

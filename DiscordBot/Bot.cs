@@ -32,6 +32,7 @@ namespace DiscordBot
         public static string Password;
         public static ulong Owner; //Amir 74779725393825792
         public static User OwnerAccount = null;
+        public static string DbDir = "./";
         public static string GoogleAPI = "AIzaSyAVrXiAHfLEbQbNJP80zbTuW2jL0wuEigQ";
         public static string SoundCloudAPI = "5c28ed4e5aef8098723bcd665d09041d";
         public static string MashapeAPI = "2OuTDTmiT6mshgokCwR10VwkNI40p125gP1jsnofSaiWBJFcUf";
@@ -62,10 +63,15 @@ namespace DiscordBot
             string[] Credentials = File.ReadAllText(CredentialsFile).Replace("\r", string.Empty).Split('\n');
             Mail = Credentials[0];
             Password = Credentials[1];
-
-            if (Credentials.Length != 3 || !ulong.TryParse(Credentials[2], out Owner))
+            
+            if (Credentials.Length <= 2 || !ulong.TryParse(Credentials[2], out Owner))
             {
                 "Couldn't load owner id from credentials".Log();
+            }
+
+            if (Credentials.Length > 3)
+            {
+                DbDir = Credentials[3];
             }
 
             Client = new DiscordClient();
