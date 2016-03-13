@@ -105,7 +105,7 @@ namespace DiscordBot.Commands
         {
             string Search = ((string)s).ToLower();
 
-            List<string> Added = new List<string>();
+            List<string> ToAdd = new List<string>();
             if (Files != null)
             {
                 int Num;
@@ -113,16 +113,14 @@ namespace DiscordBot.Commands
                 {
                     if (int.TryParse(StringNum.Trim(), out Num) && Num > 0 && Num <= Files.Length)
                     {
-                        string Name = Files[Num - 1].Substring(SongData.MusicDir.Length);
-                        ServerData.Servers[e.Server.Id].Music.Enqueue(Files[Num - 1], e.Channel, true);
-                        Added.Add(Name);
+                        ToAdd.Add(Files[Num - 1]);
                     }
                 }
 
                 Files = null;
             }
 
-            if (Added.Count == 0)
+            if (ToAdd.Count == 0)
             {
                 Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(Search)).ToArray();
                 if (Files.Length == 0)
@@ -142,8 +140,12 @@ namespace DiscordBot.Commands
                         Info += (i + 1) + ". `" + Files[i].Substring(SongData.MusicDir.Length).Compact() + "`\n";
                     }
 
-                    Bot.Send(e.Channel, "Local: \n" + Info);
+                    Bot.Send(e.Channel, "Multiple files found\n" + Info);
                 }
+            }
+            else
+            {
+                ServerData.Servers[e.Server.Id].Music.Enqueue(ToAdd, e.Channel, true);
             }
         }
 

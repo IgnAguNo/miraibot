@@ -41,21 +41,27 @@ namespace DiscordBot
         
         static void Main(string[] args)
         {
+            int Width = 92;
+            int Height = 23;
+
+            Console.SetWindowSize(Width, Height);
+            Console.SetBufferSize(Width, Height);
+
             Console.Title = "Loading..";
 
-            /*
-            string[] Splitted = File.ReadAllText("data.test.txt").Split(new string[] { "id=\"" }, StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 1; i < Splitted.Length; i++)
-            {
-                File.AppendAllText("data.test2.txt", "                \"http://i.imgur.com/" + Splitted[i].Split('"')[0] + ".png\",\r\n");
-            }
-            return;
-            /*
-            */
+            Console.BackgroundColor = ConsoleColor.White;
+            Console.ForegroundColor = ConsoleColor.Black;
+            Console.Write(string.Empty.PadLeft(Width, '-'));
+            Console.Write(" [<< Kuriyama Mirai Bot for Discord created by Amir Zaidi, built on the Discord.Net API >>] ");
+            Console.Write(string.Empty.PadLeft(Width, '-'));
+
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine();
 
             if (!File.Exists(CredentialsFile))
             {
-                "data.credentials.txt not found".Log();
+                $"{CredentialsFile} not found".Log();
                 Console.ReadKey();
                 return;
             }
@@ -117,19 +123,19 @@ namespace DiscordBot
                 $"Joined {ChannelCount} channels in {Client.Servers.Count()} servers".Log();
 
                 InitCommands();
-                "Initialised commands".Log();
 
                 Client.Log.Message += ClientEvents.LogMessage;
                 Client.MessageReceived += ClientEvents.MessageReceived;
                 Client.UserJoined += ClientEvents.UserJoined;
                 Client.UserLeft += ClientEvents.UserLeft;
-                "Handlers Loaded".Log();
 
                 Timer Updater = new Timer(1000);
                 Updater.Elapsed += (s, e) =>
                 {
                     try
                     {
+                        Console.SetWindowSize(Width, Height);
+                        Console.SetBufferSize(Width, Height);
                         Console.Title = $"[@{Client.CurrentUser.Name}] {CommandParser.Executed} Command Executed - {Msgs} Messages Sent - {Spam} Spam Blocked - Running {(DateTime.Now - Start).ToString("%d")} days, {(DateTime.Now - Start).ToString(@"%h\:mm\:ss")}";
                         int Playing = ServerData.Servers.Count(x => x.Value.Music.Playing);
                         Client.SetGame("music in " + Playing + " server" + (Playing == 1 ? "" : "s"));
@@ -142,7 +148,7 @@ namespace DiscordBot
                 Updater.AutoReset = true;
                 Updater.Start();
 
-                "Done!".Log();
+                "Booted!".Log();
             });
         }
 
@@ -193,7 +199,7 @@ namespace DiscordBot
                 await KVP.Value.Music.DisconnectClient();
             }
 
-            await Task.Delay(250);
+            await Task.Delay(350);
             await Client.Disconnect();
         }
 

@@ -41,7 +41,6 @@ namespace DiscordBot
             }
             else
             {
-                Console.ForegroundColor = ConsoleColor.Gray;
                 e.Message.Log();
             }
         }

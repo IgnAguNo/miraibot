@@ -183,6 +183,28 @@ namespace DiscordBot.Handlers
             }
         }
 
+        public void Enqueue(List<string> Queries, Channel Channel, bool Local = false)
+        {
+            List<string> Added = new List<string>();
+            foreach (string Query in Queries)
+            {
+                if (SongQueue.Count < MaxQueued)
+                {
+                    SongData Song = new SongData(Query, Local);
+                    if (Song.Found)
+                    {
+                        SongQueue.Enqueue(Song);
+                        Added.Add(Song.Name);
+                    }
+                }
+            }
+
+            if (Added.Count > 0)
+            {
+                Send(Channel, "Added " + Added.Count + " songs\n`" + string.Join("`\n`", Added) + "`");
+            }
+        }
+
         public void Shuffle()
         {
             Random Rand = new Random();
