@@ -1,6 +1,6 @@
 ﻿using DiscordBot.Handlers;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +14,7 @@ namespace DiscordBot
 
         public SongData Song;
         public bool Skip = false;
-        public Queue<byte[]> QueuedBuffers = new Queue<byte[]>();
+        public ConcurrentQueue<byte[]> QueuedBuffers = new ConcurrentQueue<byte[]>();
         private Process Ffmpeg;
         
         public bool FinishedBuffer = false;

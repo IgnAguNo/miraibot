@@ -41,6 +41,9 @@ namespace DiscordBot.Handlers
         
         public async void Run()
         {
+            //delayed start, force new thread
+            await Task.Delay(100);
+
             SongData PlaySong;
 
             byte[] CurrentSend = null;
@@ -78,10 +81,13 @@ namespace DiscordBot.Handlers
                         }
                         else
                         {
-                            await FinishSend();
-
                             if (NextSend != null)
                             {
+                                if (Sending != null)
+                                {
+                                    Sending.Wait(1000);
+                                }
+
                                 Sending = AudioClient.OutputStream.WriteAsync(NextSend, 0, NextSend.Length);
                                 if (CurrentSend != null)
                                 {
@@ -114,6 +120,10 @@ namespace DiscordBot.Handlers
                         await Task.Delay(100);
                     }
                 }
+                catch (OperationCanceledException)
+                { }
+                catch (AggregateException)
+                { }
                 catch (Exception Ex)
                 {
                     $"Music Handler Loop Exception: {Ex}".Log();
@@ -125,19 +135,13 @@ namespace DiscordBot.Handlers
         {
             if (AudioClient == null || AudioClient.Channel.Id != VoiceChannel.Id)
             {
-                if (AudioClient != null)
-                {
-                    await DisconnectClient();
-                }
-
+                await DisconnectClient();
                 AudioClient = await VoiceChannel.JoinAudio();
             }
         }
 
         public async Task DisconnectClient()
         {
-            await FinishSend();
-
             if (AudioClient != null)
             {
                 try
@@ -145,20 +149,8 @@ namespace DiscordBot.Handlers
                     await AudioClient.Disconnect();
                 }
                 catch { }
-                AudioClient = null;
-            }
-        }
-
-        private async Task FinishSend()
-        {
-            if (Sending != null)
-            {
-                try
-                {
-                    await Sending;
-                }
-                catch { }
                 Sending = null;
+                AudioClient = null;
             }
         }
 

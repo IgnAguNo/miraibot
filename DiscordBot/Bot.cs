@@ -41,19 +41,19 @@ namespace DiscordBot
         
         static void Main(string[] args)
         {
-            int Width = 92;
+            int Width = 93;
             int Height = 23;
 
             Console.SetWindowSize(Width, Height);
-            Console.SetBufferSize(Width, Height);
+            Console.SetBufferSize(Width, 1024);
 
             Console.Title = "Loading..";
 
             Console.BackgroundColor = ConsoleColor.White;
             Console.ForegroundColor = ConsoleColor.Black;
-            Console.Write(string.Empty.PadLeft(Width, '-'));
-            Console.Write(" [<< Kuriyama Mirai Bot for Discord created by Amir Zaidi, built on the Discord.Net API >>] ");
-            Console.Write(string.Empty.PadLeft(Width, '-'));
+            Console.Write(string.Empty.PadLeft(Width - 1, '-') +
+                "\n [<< Kuriyama Mirai Bot for Discord created by Amir Zaidi, built on the Discord.Net API >>] \n" +
+                string.Empty.PadLeft(Width - 1, '-'));
 
             Console.BackgroundColor = ConsoleColor.Black;
             Console.ForegroundColor = ConsoleColor.White;
@@ -134,8 +134,7 @@ namespace DiscordBot
                 {
                     try
                     {
-                        Console.SetWindowSize(Width, Height);
-                        Console.SetBufferSize(Width, Height);
+                        //Console.SetWindowSize(Width, Height);
                         Console.Title = $"[@{Client.CurrentUser.Name}] {CommandParser.Executed} Command Executed - {Msgs} Messages Sent - {Spam} Spam Blocked - Running {(DateTime.Now - Start).ToString("%d")} days, {(DateTime.Now - Start).ToString(@"%h\:mm\:ss")}";
                         int Playing = ServerData.Servers.Count(x => x.Value.Music.Playing);
                         Client.SetGame("music in " + Playing + " server" + (Playing == 1 ? "" : "s"));

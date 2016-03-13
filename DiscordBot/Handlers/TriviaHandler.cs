@@ -19,20 +19,44 @@ namespace DiscordBot.Handlers
         private string Answer = null;
         private const int PointLimit = 10;
 
-        public string Hint
+        public string HardHint
         {
             get
             {
-                if (this.Answer == null)
+                if (Answer == null)
                 {
                     return string.Empty;
                 }
 
-                char[] Letters = this.Answer.ToArray();
+                char[] Letters = Answer.ToArray();
                 int Count = 0;
                 for (int i = 1; i < Letters.Length; i++)
                 {
                     if (char.IsLetterOrDigit(Letters[i]) && ++Count % 3 != 0)
+                    {
+                        Letters[i] = '_';
+                    }
+
+                }
+
+                return string.Join(" ", Letters);
+            }
+        }
+
+        public string EasyHint
+        {
+            get
+            {
+                if (Answer == null)
+                {
+                    return string.Empty;
+                }
+
+                char[] Letters = Answer.ToArray();
+                int Count = 0;
+                for (int i = 1; i < Letters.Length; i++)
+                {
+                    if (char.IsLetterOrDigit(Letters[i]) && ++Count % 3 == 2)
                     {
                         Letters[i] = '_';
                     }
@@ -118,9 +142,14 @@ namespace DiscordBot.Handlers
                                 Points[this.Winner.Id]++;
                                 break;
                             }
+
                             if (i == 20)
                             {
-                                Send(Channel, "Hint: `" + Hint + "`");
+                                Send(Channel, "Hint: `" + HardHint + "`");
+                            }
+                            else if (i == 40)
+                            {
+                                Send(Channel, "Hint: `" + EasyHint + "`");
                             }
                         }
 

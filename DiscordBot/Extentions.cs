@@ -1,4 +1,5 @@
-﻿﻿using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Data.SQLite;
 using System.IO;
 using System.Net;
@@ -46,7 +47,7 @@ namespace DiscordBot
                 $"HTTP Load Error: {Ex}".Log();
             }
 
-            return String.Empty;
+            return string.Empty;
         }
 
         public static async Task<string> ShortUrl(this string url)
@@ -130,6 +131,13 @@ namespace DiscordBot
         {
             Uri WebRes;
             return Uri.TryCreate(Text, UriKind.Absolute, out WebRes);
+        }
+
+        public static T Dequeue<T>(this ConcurrentQueue<T> Queue)
+        {
+            T Result = default(T);
+            while (Queue.Count > 0 && !Queue.TryDequeue(out Result));
+            return Result;
         }
     }
 }
