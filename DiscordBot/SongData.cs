@@ -53,7 +53,7 @@ namespace DiscordBot
                 {
                     Task<string> SC = ("http://api.soundcloud.com/resolve?url=" + Query + "&client_id=" + Bot.SoundCloudAPI).ResponseAsync();
                     SC.Wait();
-                    if (SC.Result != string.Empty && !SC.Result.StartsWith("{\"kind\":\"track\""))
+                    if (SC.Result != string.Empty && SC.Result.StartsWith("{\"kind\":\"track\""))
                     {
                         JObject Response = JObject.Parse(SC.Result);
                         FullName = Response["title"].ToString();
