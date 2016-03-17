@@ -247,7 +247,7 @@ namespace DiscordBot.Commands
             string Query = AlphaNum.Replace(((string)s).Trim().ToLower(), "");
             if (Query != string.Empty)
             {
-                Identifier += "." + Query;
+                Identifier = Query;
             }
 
             string Playlist = "data.playlist." + Identifier + ".txt";
@@ -255,6 +255,10 @@ namespace DiscordBot.Commands
             {
                 int Count = ServerData.Servers[e.Server.Id].Music.Load(Playlist);
                 Bot.Send(e.Channel, "Loaded the saved playlist (" + Count + " songs). Use `#playlist` to view it");
+            }
+            else
+            {
+                Bot.Send(e.Channel, "Can't find " + Playlist);
             }
         }
     }
