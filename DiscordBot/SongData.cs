@@ -12,7 +12,7 @@ namespace DiscordBot
     class SongData
     {
         public static string MusicDir = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music\\";
-        private static string[] MusicExtentions = new string[] { "mp3", "mp4", "webm", "flac" };
+        //private static string[] MusicExtentions = new string[] { "mp3", "mp4", "webm", "flac" };
 
         public bool Found;
         public string Query;
@@ -37,17 +37,10 @@ namespace DiscordBot
 
             try
             {
-                if (MusicExtentions.Contains(Query.Split('.').Last().Trim()))
+                if (Local)
                 {
-                    if (Local)
-                    {
-                        FullName = Query.Substring(MusicDir.Length);
-                        Found = true;
-                    }
-                    else if (Query.IsValidUrl())
-                    {
-                        Found = true;
-                    }
+                    FullName = Query.Substring(MusicDir.Length);
+                    Found = true;
                 }
                 else if (Regex.IsMatch(Query, "(.*)(soundcloud.com|snd.sc)(.*)"))
                 {
@@ -60,6 +53,10 @@ namespace DiscordBot
                         Url = Response["stream_url"] + "?client_id=" + Bot.SoundCloudAPI;
                         Found = true;
                     }
+                }
+                else if (Query.IsValidUrl() && !Regex.IsMatch(Query, @"http(s)?://(www\.)?(youtu\.be|youtube\.com)[\w-/=&?]+"))
+                {
+                    Found = true;
                 }
                 else
                 {
