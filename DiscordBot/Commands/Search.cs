@@ -80,11 +80,11 @@ namespace DiscordBot.Commands
             }
         }
 
-        public static async void Avatar(object s, MessageEventArgs e)
+        public static void Avatar(object s, MessageEventArgs e)
         {
             if (e.Message.MentionedUsers.Count() > 0)
             {
-                Bot.Send(e.Channel, await e.Message.MentionedUsers.First().AvatarUrl.ShortUrl());
+                Bot.Send(e.Channel, e.Message.MentionedUsers.First().AvatarUrl);
             }
         }
 

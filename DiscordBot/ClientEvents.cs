@@ -80,5 +80,14 @@ namespace DiscordBot
                 Bot.Send(Channel, "I hope I'll see you again soon, " + e.User.Name + "!", null, false);
             }
         }
+
+        public static void JoinedServer(object s, ServerEventArgs e)
+        {
+            if (!ServerData.Servers.ContainsKey(e.Server.Id))
+            {
+                ServerData.Servers.Add(e.Server.Id, new ServerData(e.Server));
+                $"Joined server {e.Server.Name}".Log();
+            }
+        }
     }
 }

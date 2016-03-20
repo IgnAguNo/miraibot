@@ -13,8 +13,7 @@ namespace DiscordBot.Commands
         {
             if (e.User.VoiceChannel != null)
             {
-                MusicHandler Music = ServerData.Servers[e.Server.Id].Music;
-                await Music.ConnectClient(e.User.VoiceChannel);
+                await ServerData.Servers[e.Server.Id].Music.ConnectClient(e.User.VoiceChannel);
             }
             else
             {
@@ -24,80 +23,12 @@ namespace DiscordBot.Commands
 
         public static async void Leave(object s, MessageEventArgs e)
         {
-            ServerData ServerData = ServerData.Servers[e.Server.Id];
-            await ServerData.Music.DisconnectClient();
+            await ServerData.Servers[e.Server.Id].Music.DisconnectClient();
         }
 
         public static void Add(object s, MessageEventArgs e)
         {
-            string Query = (string)s;
-            ServerData.Servers[e.Server.Id].Music.Enqueue(Query, e.Channel);
-
-            /*
-            if (!Query.EndsWith(".mp3") && !Query.EndsWith(".mp4") && !Query.EndsWith(".webm") && !Query.EndsWith(".flac"))
-            {
-                if (Regex.IsMatch(Query, "(.*)(soundcloud.com|snd.sc)(.*)"))
-                {
-                    try
-                    {
-                        string SoundCloudResponse = await ("http://api.soundcloud.com/resolve?url=" + Query + "&client_id=" + Bot.SoundCloudAPI).ResponseAsync();
-                        if (SoundCloudResponse == string.Empty || !SoundCloudResponse.StartsWith("{\"kind\":\"track\""))
-                        {
-                            Bot.Send(e.Channel, "Sorry, the SoundCloud link doesn't seem to be working");
-                        }
-                        else
-                        {
-                            JObject Response = JObject.Parse(SoundCloudResponse);
-                            string Name = Response["title"].ToString();
-                            if (Response["streamable"].ToString().ToLower() != "false")
-                            {
-                                ServerData.Servers[e.Server.Id].Music.Enqueue(Name, Response["stream_url"].ToString() + "?client_id=" + Bot.SoundCloudAPI, e.Channel);
-                            }
-                            else
-                            {
-                                Bot.Send(e.Channel, "This file cannot be streamed");
-                            }
-                        }
-                    }
-                    catch (Exception Ex)
-                    {
-                        Bot.Client.Log.Log(LogSeverity.Error, "SoundCloudLink", Query, Ex);
-                    }
-                }
-                else //Youtube
-                {
-                    YouTubeVideo Video = null;
-                    Query = await Search.YoutubeResult(Query);
-
-                    if (Query == string.Empty)
-                    {
-                        Bot.Send(e.Channel, Conversation.CantFind);
-                        return;
-                    }
-                    else
-                    {
-                        IEnumerable<YouTubeVideo> Videos = await YouTube.Default.GetAllVideosAsync(Query);
-                        try
-                        {
-                            Video = Videos.Where(v => v.AdaptiveKind == AdaptiveKind.Audio).OrderByDescending(v => v.AudioBitrate).FirstOrDefault();
-                        }
-                        catch { }
-
-                        if (Video == null)
-                        {
-                            Bot.Send(e.Channel, "That video isn't compatible with me");
-                            return;
-                        }
-
-                        string Name = Video.Title.Substring(0, Video.Title.Length - 10);
-                        ServerData.Servers[e.Server.Id].Music.Enqueue(Name, Video.Uri, e.Channel);
-                    }
-                }
-            }
-            else
-            {
-                ServerData.Servers[e.Server.Id].Music.Enqueue(Query, e.Channel);
-            }*/
+            ServerData.Servers[e.Server.Id].Music.Enqueue((string)s, e.Channel);
         }
 
         private static string[] Files = null;
@@ -191,10 +122,8 @@ namespace DiscordBot.Commands
 
         public static void Volume(object s, MessageEventArgs e)
         {
-            string Query = (string)s;
-
             int Parse;
-            if (int.TryParse(Query, out Parse) && Parse >= 0 && Parse <= 15)
+            if (int.TryParse((string)s, out Parse) && Parse >= 0 && Parse <= 15)
             {
                 ServerData.Servers[e.Server.Id].Music.Volume = (float)Parse / 10;
             }

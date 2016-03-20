@@ -87,7 +87,8 @@ namespace DiscordBot
                 EnableEncryption = false,
                 EnableMultiserver = true,
                 Bitrate = AudioServiceConfig.MaxBitrate,
-                BufferLength = 50,
+                //BufferLength = 50,
+                BufferLength = 500,
                 Mode = AudioMode.Outgoing
             }));
 
@@ -128,6 +129,7 @@ namespace DiscordBot
                 Client.MessageReceived += ClientEvents.MessageReceived;
                 Client.UserJoined += ClientEvents.UserJoined;
                 Client.UserLeft += ClientEvents.UserLeft;
+                Client.JoinedServer += ClientEvents.JoinedServer;
 
                 Timer Updater = new Timer(1000);
                 Updater.Elapsed += (s, e) =>

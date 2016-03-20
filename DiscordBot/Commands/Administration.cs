@@ -106,12 +106,19 @@ namespace DiscordBot.Commands
             string[] Message = ((string)s).Split(' ');
             if (Message.Length > 0)
             {
-                int.TryParse(Message[0], out MsgCount);
+                if (Message[0] == "all")
+                {
+                    MsgCount = int.MaxValue;
+                }
+                else
+                {
+                    int.TryParse(Message[0], out MsgCount);
+                }
             }
 
             if (MsgCount == 0)
             {
-                MsgCount = 25;
+                MsgCount = 5;
             }
 
             foreach (User ClearUser in e.Message.MentionedUsers)

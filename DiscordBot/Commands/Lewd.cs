@@ -8,27 +8,29 @@ namespace DiscordBot.Commands
     {
         public static async void RandomLewd(object s, MessageEventArgs e)
         {
-            string Query = (string)s;
+            string Query = (string)s + "+sex";
             var RNG = new Random();
 
             try
             {
-                if (Query == "loli")
+                if (Query.Contains("loli"))
                 {
-                    Query = "flat_chest";
+                    Query = Query.Replace("loli", "flat chest");
                 }
 
-                MatchCollection Matches = Regex.Matches(await ("http://danbooru.donmai.us/posts?page=" + RNG.Next(0, 15) + "&tags=" + Query.Replace(" ", "_")).ResponseAsync(), "data-large-file-url=\"(?<id>.*?)\"");
-                if (Matches.Count > 0)
+                string Result = await ("http://danbooru.donmai.us/posts?page=0&tags=" + Query.Replace(" ", "_")).ResponseAsync();
+                MatchCollection Matches = Regex.Matches(Result, "data-large-file-url=\"(?<id>.*?)\"");
+                if (Matches.Count > 0 && !Result.ToLower().Contains("kyoukai") && !Result.ToLower().Contains("kuriyama"))
                 {
-                    Bot.Send(e.Channel, await ("http://danbooru.donmai.us" + Matches[RNG.Next(0, Matches.Count)].Groups["id"].Value).ShortUrl());
+                    Bot.Send(e.Channel, "http://danbooru.donmai.us" + Matches[RNG.Next(0, Matches.Count)].Groups["id"].Value);
                     return;
                 }
 
-                Matches = Regex.Matches(await ("http://gelbooru.com/index.php?page=post&s=list&pid=" + RNG.Next(0, 10) * 42 + "&tags=" + Query.Replace(" ", "_")).ResponseAsync(), "span id=\"s(?<id>\\d*)\"");
-                if (Matches.Count > 0)
+                Result = await ("http://gelbooru.com/index.php?page=post&s=list&pid=0&tags=" + Query.Replace(" ", "_")).ResponseAsync();
+                Matches = Regex.Matches(Result, "span id=\"s(?<id>\\d*)\"");
+                if (Matches.Count > 0 && !Result.ToLower().Contains("kyoukai") && !Result.ToLower().Contains("kuriyama"))
                 {
-                    Bot.Send(e.Channel, await (Regex.Match(await ("http://gelbooru.com/index.php?page=post&s=view&id=" + Matches[RNG.Next(0, Matches.Count)].Groups["id"].Value).ResponseAsync(), "\"(?<url>http://simg4.gelbooru.com//images.*?)\"").Groups["url"].Value).ShortUrl());
+                    Bot.Send(e.Channel, Regex.Match(await ("http://gelbooru.com/index.php?page=post&s=view&id=" + Matches[RNG.Next(0, Matches.Count)].Groups["id"].Value).ResponseAsync(), "\"(?<url>http://simg4.gelbooru.com//images.*?)\"").Groups["url"].Value);
                     return;
                 }
             }

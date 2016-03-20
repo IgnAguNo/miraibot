@@ -50,7 +50,7 @@ namespace DiscordBot
             return string.Empty;
         }
 
-        public static async Task<string> ShortUrl(this string url)
+        /*public static async Task<string> ShortUrl(this string url)
         {
             try
             {
@@ -72,8 +72,11 @@ namespace DiscordBot
                     return Regex.Match(responseText, MATCH_PATTERN).Groups["id"].Value;
                 }
             }
-            catch (Exception ex) { $"HttpException: {ex}".Log(); return url; }
-        }
+            catch
+            {
+                return url;
+            }
+        }*/
 
         public static long MB(this int Input)
         {
