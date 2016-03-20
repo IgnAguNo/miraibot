@@ -263,7 +263,7 @@ namespace DiscordBot.Handlers
 
         public void Remove(List<int> Places, Channel Channel)
         {
-            int Removed = 0;
+            List<string> Removed = new List<string>();
             int i = 1;
 
             ConcurrentQueue<SongData> NewQueue = new ConcurrentQueue<SongData>();
@@ -272,7 +272,7 @@ namespace DiscordBot.Handlers
             {
                 if (Places.Contains(i++))
                 {
-                    Removed++;
+                    Removed.Add("`" + Video.Name + "`");
                 }
                 else
                 {
@@ -280,10 +280,10 @@ namespace DiscordBot.Handlers
                 }
             }
 
-            if (Removed > 0)
+            if (Removed.Count > 0)
             {
                 SongQueue = NewQueue;
-                Send(Channel, "Removed " + Removed + " song" + (Removed == 1 ? "" : "s"));
+                Send(Channel, "Removed " + string.Join(", ", Removed));
             }
         }
 
