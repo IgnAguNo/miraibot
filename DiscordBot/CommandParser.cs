@@ -1,7 +1,8 @@
-﻿﻿using Discord;
+﻿using Discord;
 using DiscordBot.Commands;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace DiscordBot
@@ -72,7 +73,7 @@ namespace DiscordBot
                     }
                 }
 
-                if (Raw.StartsWith(Bot.Mention) && Raw.EndsWith("?") && Db.HasPermission(e.User.Id, "ask"))
+                if (Raw.StartsWith(Bot.Mention) && Raw.EndsWith("?") && Db.HasPermission(e.User.Id, "ask") && Cmds.Any(x => x.Keys.Contains("ask")))
                 {
                     Search.Ask(Raw, e);
                 }

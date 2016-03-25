@@ -187,7 +187,7 @@ namespace DiscordBot.Handlers
         public void Leaderboards()
         {
             string Text = string.Empty;
-            foreach (KeyValuePair<ulong, int> KVP in this.Points.OrderBy(u => u.Value))
+            foreach (KeyValuePair<ulong, int> KVP in Points.OrderBy(u => -u.Value))
             {
                 Text += Channel.GetUser(KVP.Key).Mention + " has " + KVP.Value + " point(s)\n";
             }
@@ -204,9 +204,9 @@ namespace DiscordBot.Handlers
 
         public void Stop()
         {
-            if (this.CancelToken != null)
+            if (CancelToken != null)
             {
-                this.CancelToken.Cancel();
+                CancelToken.Cancel();
             }
         }
 

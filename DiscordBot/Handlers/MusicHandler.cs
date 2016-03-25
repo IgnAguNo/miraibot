@@ -299,7 +299,7 @@ namespace DiscordBot.Handlers
         {
             if (CurrentSong != null)
             {
-                Send(Channel, "Now Playing `" + CurrentSong.Song.Name + "` (" + SongQueue.Count + " songs queued)");
+                Send(Channel, "Now Playing `" + CurrentSong.Song.FullName.Compact(100) + "` (" + SongQueue.Count + " songs queued)");
             }
         }
 
