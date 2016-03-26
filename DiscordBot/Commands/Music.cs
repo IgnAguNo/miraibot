@@ -39,13 +39,9 @@ namespace DiscordBot.Commands
             List<string> ToAdd = new List<string>();
             if (Files != null)
             {
-                int Num;
-                foreach (string StringNum in Search.Split(','))
+                foreach (int Num in Search.ParseInts())
                 {
-                    if (int.TryParse(StringNum.Trim(), out Num) && Num > 0 && Num <= Files.Length)
-                    {
-                        ToAdd.Add(Files[Num - 1]);
-                    }
+                    ToAdd.Add(Files[Num - 1]);
                 }
 
                 Files = null;
@@ -105,19 +101,8 @@ namespace DiscordBot.Commands
 
         public static void Remove(object s, MessageEventArgs e)
         {
-            int Place;
-            string[] ToRemoveString = ((string)s).Split(',');
-            List<int> ToRemove = new List<int>();
-
-            foreach (string Remove in ToRemoveString)
-            {
-                if (int.TryParse(Remove.Trim(), out Place))
-                {
-                    ToRemove.Add(Place);
-                }
-            }
-
-            ServerData.Servers[e.Server.Id].Music.Remove(ToRemove, e.Channel);
+            MusicHandler Music = ServerData.Servers[e.Server.Id].Music;
+            Music.Send(e.Channel, "Removed: " + Music.Remove(s.ParseInts()).Join(", ") );
         }
 
         public static void Volume(object s, MessageEventArgs e)
@@ -188,6 +173,38 @@ namespace DiscordBot.Commands
             else
             {
                 Bot.Send(e.Channel, "Can't find " + Playlist);
+            }
+        }
+
+        public static void Telegram(object s, MessageEventArgs e)
+        {
+            TelegramIntegration.Music = ServerData.Servers[e.Server.Id].Music;
+            Bot.Send(e.Channel, e.Server.Name + " has been set as the music server for Telegram");
+        }
+
+        public static void TgToggle(object s, MessageEventArgs e)
+        {
+            var Users = TelegramIntegration.UsernameIdCache.Where(x => x.Value == (string)s);
+            if (Users.Count() > 0)
+            {
+                var User = Users.First();
+                lock (TelegramIntegration.Blocked)
+                {
+                    if (TelegramIntegration.Blocked.Contains(User.Key))
+                    {
+                        TelegramIntegration.Blocked.Remove(User.Key);
+                        Bot.Send(e.Channel, "Unblocked user " + User.Value);
+                    }
+                    else
+                    {
+                        TelegramIntegration.Blocked.Add(User.Key);
+                        Bot.Send(e.Channel, "Blocked user " + User.Value);
+                    }
+                }
+            }
+            else
+            {
+                Bot.Send(e.Channel, "That username couldn't be found");
             }
         }
     }

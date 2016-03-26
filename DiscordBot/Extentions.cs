@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
 using System.Net;
@@ -20,14 +21,14 @@ namespace DiscordBot
                     return Input;
                 }
 
-                Input = Input.Replace("\n", String.Empty).Replace("\r", String.Empty);
+                Input = Input.Replace("\n", string.Empty).Replace("\r", string.Empty);
                 return Input.Substring(0, MaxPart) + ".." + Input.Substring(Input.Length - MaxPart);
             }
             catch
             {
             }
 
-            return String.Empty;
+            return string.Empty;
         }
 
         public static async Task<string> ResponseAsync(this string Url, WebHeaderCollection Headers = null)
@@ -49,6 +50,26 @@ namespace DiscordBot
 
             return string.Empty;
         }
+
+        public static List<int> ParseInts(this object Text, char Separator = ',', int Offset = 0)
+        {
+            string[] SplitString = ((string)Text).Split(',');
+            List<int> Ints = new List<int>();
+
+            int Num;
+            foreach (string Part in SplitString)
+            {
+                if (int.TryParse(Part.Trim(), out Num))
+                {
+                    Ints.Add(Num + Offset);
+                }
+            }
+
+            return Ints;
+        }
+
+        public static string Join(this IEnumerable<string> values, string separator)
+            => string.Join(separator, values);
 
         /*public static async Task<string> ShortUrl(this string url)
         {

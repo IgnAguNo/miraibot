@@ -41,6 +41,7 @@ namespace DiscordBot
         
         static void Main(string[] args)
         {
+
             int Width = 93;
             int Height = 23;
 
@@ -149,6 +150,8 @@ namespace DiscordBot
                 Updater.AutoReset = true;
                 Updater.Start();
 
+                TelegramIntegration.Start();
+
                 "Booted!".Log();
             });
         }
@@ -238,7 +241,9 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, new string[] { "shuffle", "s" }, "Shuffles the current queue", Music.Shuffle),
                 new Command(Command.PrefixType.Command, "clear", "Clears the current queue", Music.Clear),
                 new Command(Command.PrefixType.Command, "save", "Saves the current playlist", Music.Save),
-                new Command(Command.PrefixType.Command, "load", "Loads the current playlist from", Music.Load)
+                new Command(Command.PrefixType.Command, "load", "Loads the current playlist from", Music.Load),
+                new Command(Command.PrefixType.Command, "telegram", "Sets the current music channel as the Telegram channel", Music.Telegram),
+                new Command(Command.PrefixType.Command, "tgtoggle", "Allows or disallows someone from using Telegram commands", Music.TgToggle)
             });
 
             CommandParser.Categories.Add(typeof(Trivia).Name, new Command[] {

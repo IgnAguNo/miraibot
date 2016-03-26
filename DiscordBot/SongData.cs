@@ -27,7 +27,7 @@ namespace DiscordBot
         public string FullName;
         public string Url;
 
-        public SongData(string ToSearch, bool LocalOnly)
+        public SongData(string ToSearch, bool LocalOnly = false)
         {
             Found = false;
             Query = ToSearch;
@@ -67,10 +67,11 @@ namespace DiscordBot
                     {
                         Task<IEnumerable<YouTubeVideo>> YtVids = YouTube.Default.GetAllVideosAsync(YtLink.Result);
                         YtVids.Wait();
-                        YouTubeVideo Video = YtVids.Result.Where(v => v.AdaptiveKind == AdaptiveKind.Audio).OrderByDescending(v => v.AudioBitrate).FirstOrDefault();
+                        IOrderedEnumerable<YouTubeVideo> Videos = YtVids.Result.Where(v => v.AdaptiveKind == AdaptiveKind.Audio).OrderByDescending(v => v.AudioBitrate);
 
-                        if (Video != null)
+                        if (Videos.Count() > 0)
                         {
+                            YouTubeVideo Video = Videos.First();
                             FullName = Video.Title.Substring(0, Video.Title.Length - 10);
                             Url = Video.Uri;
                             Found = true;

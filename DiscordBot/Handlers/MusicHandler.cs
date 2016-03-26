@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace DiscordBot.Handlers
@@ -175,6 +176,14 @@ namespace DiscordBot.Handlers
             }
         }
 
+        public void DirectEnqueue(SongData Song)
+        {
+            if (SongQueue.Count < MaxQueued)
+            {
+                SongQueue.Enqueue(Song);
+            }
+        }
+
         public void Enqueue(List<string> Queries, Channel Channel, bool Local = false)
         {
             List<string> Added = new List<string>();
@@ -261,7 +270,7 @@ namespace DiscordBot.Handlers
             }
         }
 
-        public void Remove(List<int> Places, Channel Channel)
+        public List<string> Remove(List<int> Places)
         {
             List<string> Removed = new List<string>();
             int i = 1;
@@ -283,8 +292,20 @@ namespace DiscordBot.Handlers
             if (Removed.Count > 0)
             {
                 SongQueue = NewQueue;
-                Send(Channel, "Removed " + string.Join(", ", Removed));
             }
+
+            return Removed;
+        }
+
+        public string PeekNextName()
+        {
+            SongData Result;
+            if (SongQueue.TryPeek(out Result))
+            {
+                return Result.FullName;
+            }
+
+            return null;
         }
 
         public void Skip()
@@ -295,6 +316,11 @@ namespace DiscordBot.Handlers
             }
         }
 
+        public string GetCurrentSongName()
+        {
+            return CurrentSong?.Song.FullName.Compact(100);
+        }
+
         public void SendCurrentSong(Channel Channel)
         {
             if (CurrentSong != null)
@@ -303,18 +329,40 @@ namespace DiscordBot.Handlers
             }
         }
 
+        public string GetCurrentPlaylist()
+        {
+            StringBuilder Builder = new StringBuilder();
+
+            int Count = 0;
+            foreach (SongData Entry in SongQueue.ToArray())
+            {
+                Builder.Append(++Count);
+                Builder.Append(". ");
+                Builder.Append(Entry.Name);
+                Builder.Append("\n");
+            }
+
+            return Builder.ToString();
+        }
+
         public void SendPlaylist(Channel Channel)
         {
             SongData[] Queued = SongQueue.ToArray();
-            string Text = Queued.Length + " Song(s) Queued\n";
+            StringBuilder Text = new StringBuilder();
+
+            Text.Append(Queued.Length);
+            Text.Append(" Song(s) Queued\n");
 
             int Count = 0;
             foreach (SongData Entry in Queued)
             {
-                Text += (++Count).ToString() + ". *" + Entry.Name + "*\n";
+                Text.Append(++Count);
+                Text.Append(". *");
+                Text.Append(Entry.Name);
+                Text.Append("*\n");
             }
 
-            Send(Channel, Text);
+            Send(Channel, Text.ToString());
         }
 
         public void Clear()
