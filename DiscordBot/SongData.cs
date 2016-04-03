@@ -27,13 +27,18 @@ namespace DiscordBot
         public string FullName;
         public string Url;
 
-        public SongData(string ToSearch, bool LocalOnly = false)
+        public SongData(object ToSearch, bool LocalOnly = false)
         {
             Found = false;
-            Query = ToSearch;
+            Query = ((string)ToSearch).Trim();
             Local = LocalOnly;
             FullName = Query;
             Url = Query;
+
+            if (Query == string.Empty)
+            {
+                return;
+            }
 
             try
             {

@@ -329,6 +329,11 @@ namespace DiscordBot.Handlers
             }
         }
 
+        public int GetPlaylistCount()
+        {
+            return SongQueue.ToArray().Count();
+        }
+
         public string GetCurrentPlaylist()
         {
             StringBuilder Builder = new StringBuilder();
@@ -400,7 +405,7 @@ namespace DiscordBot.Handlers
         public int Load(string DataFile)
         {
             int Count = 0;
-            ConcurrentQueue<SongData> Queue = new ConcurrentQueue<SongData>();
+            ConcurrentQueue<SongData> Queue = new ConcurrentQueue<SongData>(SongQueue);
 
             using (BinaryReader Reader = new BinaryReader(File.Open(DataFile, FileMode.Open)))
             {

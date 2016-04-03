@@ -21,7 +21,6 @@ C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Re
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Release\Nito.AsyncEx.Concurrent.xml
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Release\Nito.AsyncEx.Enlightenment.xml
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Release\RestSharp.xml
-C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\obj\Release\DiscordBot.csprojResolveAssemblyReference.cache
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\obj\Release\DiscordBot.exe
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\obj\Release\DiscordBot.pdb
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Release\Common.Logging.dll
@@ -39,3 +38,4 @@ C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Re
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Release\Telegram.Bot.dll
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Release\System.Net.Http.Formatting.xml
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Release\Telegram.Bot.xml
+C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\obj\Release\DiscordBot.csprojResolveAssemblyReference.cache

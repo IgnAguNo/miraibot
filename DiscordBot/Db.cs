@@ -91,7 +91,8 @@ namespace DiscordBot
                             }
                             else
                             {
-                                Rank = 0;
+                                ForceAddAccount(UserId);
+                                Rank = 1;
                             }
                         }
                     }
@@ -207,10 +208,58 @@ namespace DiscordBot
             }
         }
 
+        private static ConcurrentDictionary<long, ulong> DiscordServerCache = new ConcurrentDictionary<long, ulong>();
+        public static void SetDiscordServerId(long TelegramId, ulong DiscordServerId)
+        {
+            using (SQLiteConnection Conn = Connect)
+            {
+                Command(Conn, "DELETE FROM tglinks WHERE tgid = ?", TelegramId).ExecuteDispose();
+                Command(Conn, "INSERT INTO tglinks (tgid, discordid) VALUES (?, ?)", TelegramId, DiscordServerId).ExecuteDispose();
+            }
+
+            ulong OldDiscordServerId;
+            if (DiscordServerCache.TryGetValue(TelegramId, out OldDiscordServerId))
+            {
+                DiscordServerCache.TryUpdate(TelegramId, DiscordServerId, OldDiscordServerId);
+            }
+            else
+            {
+                DiscordServerCache.TryAdd(TelegramId, DiscordServerId);
+            }
+        }
+
+        public static ulong GetDiscordServerId(long TelegramId)
+        {
+            ulong Server;
+            if (!DiscordServerCache.TryGetValue(TelegramId, out Server))
+            {
+                using (SQLiteConnection Conn = Connect)
+                {
+                    using (SQLiteCommand Cmd = Command(Conn, "SELECT discordid FROM tglinks WHERE tgid = ?", TelegramId))
+                    {
+                        using (SQLiteDataReader Reader = Cmd.ExecuteReader())
+                        {
+                            if (!Reader.Read())
+                            {
+                                return 0;
+                            }
+
+                            Server = Convert.ToUInt64(Reader["discordid"]);
+                        }
+                    }
+                }
+
+                DiscordServerCache.TryAdd(TelegramId, Server);
+            }
+
+            return Server;
+        }
+
         public static void FlushCache()
         {
             UserRankCache.Clear();
             PermissionRankCache.Clear();
+            DiscordServerCache.Clear();
         }
     }
 }

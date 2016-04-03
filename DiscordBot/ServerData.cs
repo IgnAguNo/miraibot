@@ -15,6 +15,14 @@ namespace DiscordBot
         public ConcurrentDictionary<ulong, TriviaHandler> Trivia = new ConcurrentDictionary<ulong, TriviaHandler>();
         private ConcurrentDictionary<ulong, List<Command>> ChannelCommands = new ConcurrentDictionary<ulong, List<Command>>();
 
+        public string Name
+        {
+            get
+            {
+                return Server.Name;
+            }
+        }
+
         public ServerData(Server UseServer)
         {
             Server = UseServer;

@@ -103,10 +103,10 @@ namespace DiscordBot
                 int ChannelCount = 0;
                 foreach (Server Server in Client.Servers)
                 {
-                    foreach (User User in Server.Users)
+                    /*foreach (User User in Server.Users)
                     {
                         Db.ForceAddAccount(User.Id);
-                    }
+                    }*/
 
                     ServerData.Servers.Add(Server.Id, new ServerData(Server));
                     ChannelCount += Server.TextChannels.Count();
@@ -138,7 +138,7 @@ namespace DiscordBot
                     try
                     {
                         //Console.SetWindowSize(Width, Height);
-                        Console.Title = $"[@{Client.CurrentUser.Name}] {CommandParser.Executed} Command Executed - {Msgs} Messages Sent - {Spam} Spam Blocked - Running {(DateTime.Now - Start).ToString("%d")} days, {(DateTime.Now - Start).ToString(@"%h\:mm\:ss")}";
+                        Console.Title = $"[@{Client.CurrentUser.Name}] {CommandParser.Executed} Command Executed - {Msgs} Messages Sent - {Spam} Spam Blocked - {TelegramIntegration.Msgs} TG MSGs - Running {(DateTime.Now - Start).ToString("%d")} days, {(DateTime.Now - Start).ToString(@"%h\:mm\:ss")}";
                         int Playing = ServerData.Servers.Count(x => x.Value.Music.Playing);
                         Client.SetGame("music in " + Playing + " server" + (Playing == 1 ? "" : "s"));
                     }
@@ -150,7 +150,7 @@ namespace DiscordBot
                 Updater.AutoReset = true;
                 Updater.Start();
 
-                TelegramIntegration.Start();
+                //TelegramIntegration.Start();
 
                 "Booted!".Log();
             });
@@ -160,10 +160,10 @@ namespace DiscordBot
         {
             try
             {
-                if (Channel == null || Message == null || Message == string.Empty)
+                if (Channel == null || Message == null || Message == string.Empty || !Channel.GetUser(Client.CurrentUser.Id).GetPermissions(Channel).SendMessages)
                 {
                     return;
-                }
+                }                
 
                 if (SpamProtection && Client.MessageQueue.Count > 3)
                 {
@@ -242,7 +242,7 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, "clear", "Clears the current queue", Music.Clear),
                 new Command(Command.PrefixType.Command, "save", "Saves the current playlist", Music.Save),
                 new Command(Command.PrefixType.Command, "load", "Loads the current playlist from", Music.Load),
-                new Command(Command.PrefixType.Command, "telegram", "Sets the current music channel as the Telegram channel", Music.Telegram),
+                new Command(Command.PrefixType.Command, "tgpair", "Pairs a Telegram channel to a Discord channel", Music.Pair),
                 new Command(Command.PrefixType.Command, "tgtoggle", "Allows or disallows someone from using Telegram commands", Music.TgToggle)
             });
 

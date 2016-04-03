@@ -176,10 +176,10 @@ namespace DiscordBot.Commands
             }
         }
 
-        public static void Telegram(object s, MessageEventArgs e)
+        public static void Pair(object s, MessageEventArgs e)
         {
-            TelegramIntegration.Music = ServerData.Servers[e.Server.Id].Music;
-            Bot.Send(e.Channel, e.Server.Name + " has been set as the music server for Telegram");
+            TelegramIntegration.NextPairId = e.Server.Id;
+            Bot.Send(e.Channel, e.Server.Name + " is waiting to be paired to a Telegram server");
         }
 
         public static void TgToggle(object s, MessageEventArgs e)

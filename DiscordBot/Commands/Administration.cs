@@ -134,7 +134,7 @@ namespace DiscordBot.Commands
             IEnumerable<Message> Messages = await e.Channel.DownloadMessages(250);
             if (!e.Message.MentionedRoles.Contains(e.Server.EveryoneRole))
             {
-                Messages = Messages.Where(m => ClearUsers.Contains(m.User.Id));
+                Messages = Messages.Where(m => m != null && m.User != null && ClearUsers.Contains(m.User.Id));
             }
 
             int i = 0;
