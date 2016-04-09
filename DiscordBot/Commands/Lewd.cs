@@ -6,40 +6,54 @@ namespace DiscordBot.Commands
 {
     class Lewd
     {
-        public static async void RandomLewd(object s, MessageEventArgs e)
+        public static void RandomLewd(object s, MessageEventArgs e)
         {
-            string Query = (string)s + "+sex";
-            var RNG = new Random();
+            Bot.Send(e.Channel, GetRandomLewd(s, true));
+        }
 
+        public static string GetRandomLewd(object s, bool FilterKnK)
+        {
             try
             {
+                var RNG = new Random();
+
+                string Query = (string)s;
+                if (Query.StartsWith("."))
+                {
+                    Query = Query.Substring(1);
+                }
+                else
+                {
+                    Query += "+sex";
+                }
+
                 if (Query.Contains("loli"))
                 {
                     Query = Query.Replace("loli", "flat chest");
                 }
 
-                string Result = await ("http://danbooru.donmai.us/posts?page=0&tags=" + Query.Replace(" ", "_")).ResponseAsync();
+                Query = Query.Replace(" ", "_");
+
+                string Result = ("http://danbooru.donmai.us/posts?page=0&tags=" + Query).WebResponse();
                 MatchCollection Matches = Regex.Matches(Result, "data-large-file-url=\"(?<id>.*?)\"");
-                if (Matches.Count > 0 && !Result.ToLower().Contains("kyoukai") && !Result.ToLower().Contains("kuriyama"))
+                if (Matches.Count > 0 && (!FilterKnK || (!Result.ToLower().Contains("kyoukai") && !Result.ToLower().Contains("kuriyama"))))
                 {
-                    Bot.Send(e.Channel, "http://danbooru.donmai.us" + Matches[RNG.Next(0, Matches.Count)].Groups["id"].Value);
-                    return;
+                    return "http://danbooru.donmai.us" + Matches[RNG.Next(0, Matches.Count)].Groups["id"].Value;
                 }
 
-                Result = await ("http://gelbooru.com/index.php?page=post&s=list&pid=0&tags=" + Query.Replace(" ", "_")).ResponseAsync();
+                Result = ("http://gelbooru.com/index.php?page=post&s=list&pid=0&tags=" + Query).WebResponse();
                 Matches = Regex.Matches(Result, "span id=\"s(?<id>\\d*)\"");
-                if (Matches.Count > 0 && !Result.ToLower().Contains("kyoukai") && !Result.ToLower().Contains("kuriyama"))
+                if (Matches.Count > 0 && (!FilterKnK || (!Result.ToLower().Contains("kyoukai") && !Result.ToLower().Contains("kuriyama"))))
                 {
-                    Bot.Send(e.Channel, Regex.Match(await ("http://gelbooru.com/index.php?page=post&s=view&id=" + Matches[RNG.Next(0, Matches.Count)].Groups["id"].Value).ResponseAsync(), "\"(?<url>http://simg4.gelbooru.com//images.*?)\"").Groups["url"].Value);
-                    return;
+                    return Regex.Match(("http://gelbooru.com/index.php?page=post&s=view&id=" + Matches[RNG.Next(0, Matches.Count)].Groups["id"].Value).WebResponse(), "\"(?<url>http://simg4.gelbooru.com//images.*?)\"").Groups["url"].Value;
                 }
             }
             catch (Exception Ex)
             {
-                Bot.Client.Log.Log(LogSeverity.Error, "Lewd Search", null, Ex);
+                $"Lewd Search {Ex}".Log();
             }
 
-            Bot.Send(e.Channel, "I couldn't find anything");
+            return "I couldn't find anything";
         }
     }
 }

@@ -27,21 +27,21 @@ namespace DiscordBot
         }
 
         public const string CredentialsFile = "data.credentials.txt";
+        public const string TelegramFile = "data.telegram.txt";
 
         public static string Mail;
         public static string Password;
         public static ulong Owner; //Amir 74779725393825792
         public static User OwnerAccount = null;
         public static string DbDir = "./";
-        public static string GoogleAPI = "AIzaSyAVrXiAHfLEbQbNJP80zbTuW2jL0wuEigQ";
-        public static string SoundCloudAPI = "5c28ed4e5aef8098723bcd665d09041d";
-        public static string MashapeAPI = "2OuTDTmiT6mshgokCwR10VwkNI40p125gP1jsnofSaiWBJFcUf";
-        public static string AniIdAPI = "amirz-i0ev1";
-        public static string AniSecretAPI = "E7HB4bm9SJ3wbfc5klnv1I";
+        public const string GoogleAPI = "AIzaSyAVrXiAHfLEbQbNJP80zbTuW2jL0wuEigQ";
+        public const string SoundCloudAPI = "5c28ed4e5aef8098723bcd665d09041d";
+        public const string MashapeAPI = "2OuTDTmiT6mshgokCwR10VwkNI40p125gP1jsnofSaiWBJFcUf";
+        public const string AniIdAPI = "amirz-i0ev1";
+        public const string AniSecretAPI = "E7HB4bm9SJ3wbfc5klnv1I";
         
         static void Main(string[] args)
         {
-
             int Width = 93;
             int Height = 23;
 
@@ -89,7 +89,8 @@ namespace DiscordBot
                 EnableMultiserver = true,
                 Bitrate = AudioServiceConfig.MaxBitrate,
                 //BufferLength = 50,
-                BufferLength = 500,
+                //BufferLength = 500,
+                BufferLength = 1000,
                 Mode = AudioMode.Outgoing
             }));
 
@@ -150,19 +151,38 @@ namespace DiscordBot
                 Updater.AutoReset = true;
                 Updater.Start();
 
-                //TelegramIntegration.Start();
+                if (File.Exists(TelegramFile))
+                {
+                    await TelegramIntegration.Start(File.ReadAllText(TelegramFile).Trim());
+                    $"Logged into Telegram as {TelegramIntegration.Me.Username}".Log();
+                }
 
-                "Booted!".Log();
+                AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                {
+                    Shutdown();
+                    "Crashed due to an uncaught exception, saved data for next boot".Log();
+                };
+
+                "Booted! Waiting for input".Log();
             });
         }
 
-        public static async void Send(Channel Channel, string Message, Stream Stream = null, bool SpamProtection = true)
+        public static void Send(Channel Channel, string Message, Stream Stream = null, bool SpamProtection = true)
+        {
+            Task<Message> Sending = SendAsync(Channel, Message, Stream, SpamProtection);
+            if (Sending != null)
+            {
+                Sending.Wait();
+            }
+        }
+
+        public static async Task<Message> SendAsync(Channel Channel, string Message, Stream Stream = null, bool SpamProtection = true)
         {
             try
             {
                 if (Channel == null || Message == null || Message == string.Empty || !Channel.GetUser(Client.CurrentUser.Id).GetPermissions(Channel).SendMessages)
                 {
-                    return;
+                    return null;
                 }                
 
                 if (SpamProtection && Client.MessageQueue.Count > 3)
@@ -171,7 +191,7 @@ namespace DiscordBot
                     Client.MessageQueue.Clear();
                     Spam++;
 
-                    return;
+                    return null;
                 }
 
                 int Max = 2000;
@@ -183,25 +203,30 @@ namespace DiscordBot
                 Msgs++;
                 if (Stream != null)
                 {
-                    await Channel.SendFile(Message, Stream);
+                    return await Channel.SendFile(Message, Stream);
                 }
                 else
                 {
-                    await Channel.SendMessage(Message);
+                    return await Channel.SendMessage(Message);
                 }
             }
             catch (Exception Ex)
             {
                 Client.Log.Log(LogSeverity.Error, Channel.Name, Message.Compact(), Ex);
             }
+
+            return null;
         }
 
         public static async void Shutdown()
         {
             foreach (KeyValuePair<ulong, ServerData> KVP in ServerData.Servers)
             {
+                KVP.Value.Music.Save(string.Empty, KVP.Value.Server);
                 await KVP.Value.Music.DisconnectClient();
             }
+
+            "Disconnecting".Log();
 
             await Task.Delay(350);
             await Client.Disconnect();
@@ -243,7 +268,9 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, "save", "Saves the current playlist", Music.Save),
                 new Command(Command.PrefixType.Command, "load", "Loads the current playlist from", Music.Load),
                 new Command(Command.PrefixType.Command, "tgpair", "Pairs a Telegram channel to a Discord channel", Music.Pair),
-                new Command(Command.PrefixType.Command, "tgtoggle", "Allows or disallows someone from using Telegram commands", Music.TgToggle)
+                new Command(Command.PrefixType.Command, "tgunpair", "Unpairs all Telegram channels", Music.Unpair),
+                new Command(Command.PrefixType.Command, "tgtoggle", "Allows or disallows someone from using Telegram commands", Music.TgToggle),
+                new Command(Command.PrefixType.Command, "adhd", "Toggles ADHD", Music.Adhd)
             });
 
             CommandParser.Categories.Add(typeof(Trivia).Name, new Command[] {
@@ -276,7 +303,7 @@ namespace DiscordBot
             }
 
             CommandParser.Categories.Add(typeof(Conversation).Name, new Command[] {
-                new Command(Command.PrefixType.Mention, new string[] { "hi", "hey", "hello" }, "Choose from a list", "Hi!"),
+                new Command(Command.PrefixType.Mention, new string[] { "hi", "hey", "hello" }, "Say hello to me", "Hi!"),
                 new Command(Command.PrefixType.Mention, "choose from", "Choose from a list", Conversation.Choose),
                 new Command(Command.PrefixType.Mention, "how are you", "Check if my owner is online", Conversation.Status),
                 new Command(Command.PrefixType.Mention, new string[] { "do you like me", "do you love me" }, "...", Conversation.Love),
@@ -299,8 +326,8 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Mention, new string[] { "do you even lewd", "try to be lewd" }, "Send semi-lewd pictures", Conversation.Lewd),
                 new Command(Command.PrefixType.Mention, new string[] { "what's", "what is", "who's", "who is" }, "Search for a term", Search.Define),
                 new Command(Command.PrefixType.Mention, new string[] { "what are", "what're" }, "Search for a plural term", Search.DefineSimple),
-                new Command(Command.PrefixType.Mention, "shitpost", "Send a shitpost", Conversation.Shitpost),
-                new Command(Command.PrefixType.Mention, new string[] { "send oc", "stealie" }, "Stealie a mealie", Conversation.Dogman),
+                //new Command(Command.PrefixType.Mention, "shitpost", "Send a shitpost", Conversation.Shitpost),
+                //new Command(Command.PrefixType.Mention, new string[] { "send oc", "stealie" }, "Stealie a mealie", Conversation.Dogman),
                 new Command(Command.PrefixType.Command, "meme", "Memeify a text", Conversation.Meme),
 
                 new Command(Command.PrefixType.None, "megane", "", "Fuyukai desu!"),

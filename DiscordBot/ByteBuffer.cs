@@ -5,7 +5,11 @@ namespace DiscordBot
 {
     class ByteBuffer
     {
-        private int BufferSize;
+        public int BufferSize
+        {
+            get;
+            private set;
+        }
         private int MaxQueued;
         private ConcurrentStack<byte[]> Buffers = new ConcurrentStack<byte[]>();
 

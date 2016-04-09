@@ -255,6 +255,16 @@ namespace DiscordBot
             return Server;
         }
 
+        public static void RemoveDiscordServerId(ulong DiscordServerId)
+        {
+            using (SQLiteConnection Conn = Connect)
+            {
+                Command(Conn, "DELETE FROM tglinks WHERE discordid = ?", DiscordServerId).ExecuteDispose();
+            }
+
+            DiscordServerCache.Clear();
+        }
+
         public static void FlushCache()
         {
             UserRankCache.Clear();

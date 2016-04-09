@@ -1,7 +1,9 @@
-﻿using DiscordBot.Handlers;
+﻿using DiscordBot.Commands;
+using DiscordBot.Handlers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -12,11 +14,11 @@ namespace DiscordBot
         public static uint Msgs = 0;
 
         private static Api Api;
-        private static User Me;
+        public static User Me;
         public static ConcurrentDictionary<int, string> UsernameIdCache = new ConcurrentDictionary<int, string>();
         public static List<int> Blocked = new List<int>();
         private static Dictionary<string, EventHandler<MessageEventArgs>> Commands = new Dictionary<string, EventHandler<MessageEventArgs>>();
-        public static ulong NextPairId = 0;
+        public static Discord.Channel NextPairChannel = null;
 
         private static MusicHandler GetMusic(MessageEventArgs e)
             => GetMusic(e.Message.Chat.Id);
@@ -40,13 +42,12 @@ namespace DiscordBot
             }
             catch
             {
-
             }
         }
 
-        public static async void Start()
+        public static async Task Start(string ApiKey)
         {
-            Api = new Api("");
+            Api = new Api(ApiKey);
             Me = await Api.GetMe();
 
             Commands.Add("add", (s, e) => 
@@ -182,12 +183,28 @@ namespace DiscordBot
 
             Commands.Add("pair", (s, e) =>
             {
-                if (NextPairId > 0)
+                if (NextPairChannel != null)
                 {
-                    Db.SetDiscordServerId(e.Message.Chat.Id, NextPairId);
-                    Respond(e, "This chat has now been succesfully paired with " + ServerData.Servers[NextPairId].Name);
+                    Db.SetDiscordServerId(e.Message.Chat.Id, NextPairChannel.Server.Id);
+                    Respond(e, "This chat has now been succesfully paired with " + NextPairChannel.Server.Name);
+                    Bot.Send(NextPairChannel, "This server has been paired with " + ((e.Message.Chat.Type == ChatType.Private) ? e.Message.Chat.Title + " by " : "") + e.Message.From.Username);
 
-                    NextPairId = 0;
+                    NextPairChannel = null;
+                }
+            });
+
+            Commands.Add("hrc", (s, e) =>
+            {
+                try
+                {
+                    if (e.Message.Chat.Type == ChatType.Private || e.Message.Chat.Title.StartsWith("H"))
+                    {
+                        Respond(e, Lewd.GetRandomLewd(s, (e.Message.From.Username != "Akkey" && e.Message.Chat.Type != ChatType.Private)));
+                    }
+                }
+                catch (Exception Ex)
+                {
+                    $"HRC {Ex}".Log();
                 }
             });
 
@@ -197,7 +214,6 @@ namespace DiscordBot
             //Api.UpdateReceived += Api_UpdateReceived;
 
             Api.StartReceiving();
-            $"Logged into Telegram as {Me.Username}".Log();
         }
 
         private static void Api_ChosenInlineResultReceived(object sender, ChosenInlineResultEventArgs e)
@@ -241,7 +257,7 @@ namespace DiscordBot
 
                             if (Substring == string.Empty || Substring.StartsWith(" "))
                             {
-                                KVP.Value(Substring, e);
+                                KVP.Value(Substring.Trim(), e);
                                 return;
                             }
                         }

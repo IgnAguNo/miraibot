@@ -102,7 +102,7 @@ namespace DiscordBot.Handlers
                             Question = string.Empty;
                             while (Question == string.Empty)
                             {
-                                Json = await "http://jservice.io/api/random?count=1".ResponseAsync();
+                                Json = "http://jservice.io/api/random?count=1".WebResponse();
                                 Trivia = JObject.Parse(Json.Substring(1, Json.Length - 2));
                                 Question = Trivia["question"].ToString().Trim();
                             }

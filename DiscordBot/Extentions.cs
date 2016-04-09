@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
 using System.Net;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace DiscordBot
 {
@@ -31,21 +29,24 @@ namespace DiscordBot
             return string.Empty;
         }
 
-        public static async Task<string> ResponseAsync(this string Url, WebHeaderCollection Headers = null)
+        public static string WebResponse(this string Url, WebHeaderCollection Headers = null)
         {
-            try
+            for (int i = 0; i < 5; i++)
             {
-                WebRequest Request = WebRequest.Create(Url);
-                if (Headers != null)
+                try
                 {
-                    Request.Headers = Headers;
-                }
+                    WebRequest Request = WebRequest.Create(Url);
+                    if (Headers != null)
+                    {
+                        Request.Headers = Headers;
+                    }
 
-                return await new StreamReader((await Request.GetResponseAsync()).GetResponseStream()).ReadToEndAsync();
-            }
-            catch (Exception Ex)
-            {
-                $"HTTP Load Error: {Ex}".Log();
+                    return new StreamReader(Request.GetResponse().GetResponseStream()).ReadToEnd();
+                }
+                catch //(Exception Ex)
+                {
+                    //$"HTTP Load Error: {Ex}".Log();
+                }
             }
 
             return string.Empty;

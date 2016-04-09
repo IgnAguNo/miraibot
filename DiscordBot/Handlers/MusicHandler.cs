@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace DiscordBot.Handlers
@@ -23,6 +24,7 @@ namespace DiscordBot.Handlers
         private Task Sending = null;
 
         public float Volume = 1.0f;
+        public bool ADHD = false;
 
         public bool Playing
         {
@@ -38,6 +40,11 @@ namespace DiscordBot.Handlers
             {
                 return "Music";
             }
+        }
+
+        public MusicHandler(Server S)
+        {
+            Load(S);
         }
         
         public async void Run()
@@ -56,6 +63,7 @@ namespace DiscordBot.Handlers
                 {
                     if (CurrentSong != null && CurrentSong.Skip)
                     {
+                        $"Finished sending {CurrentSong.Song.Name}".Log();
                         CurrentSong.Dispose();
                         CurrentSong = null;
                     }
@@ -86,7 +94,7 @@ namespace DiscordBot.Handlers
                             {
                                 if (Sending != null)
                                 {
-                                    Sending.Wait(1000);
+                                    //Sending.Wait(1000);
                                 }
 
                                 Sending = AudioClient.OutputStream.WriteAsync(NextSend, 0, NextSend.Length);
@@ -101,6 +109,13 @@ namespace DiscordBot.Handlers
 
                             if (CurrentSong.QueuedBuffers.Count > 0)
                             {
+                                //Speedtest
+                                if (ADHD && CurrentSong.QueuedBuffers.Count > 1)
+                                {
+                                    CurrentSong.QueuedBuffers.Dequeue();
+                                    CurrentSong.Waiter.Release(1);
+                                }
+
                                 NextSend = CurrentSong.QueuedBuffers.Dequeue();
                                 CurrentSong.Waiter.Release(1);
 
@@ -134,25 +149,42 @@ namespace DiscordBot.Handlers
 
         public async Task ConnectClient(Channel VoiceChannel)
         {
-            if (AudioClient == null || AudioClient.Channel.Id != VoiceChannel.Id)
+            try
             {
-                await DisconnectClient();
-                AudioClient = await VoiceChannel.JoinAudio();
+                if (AudioClient == null || AudioClient.Channel.Id != VoiceChannel.Id || AudioClient.State != ConnectionState.Connected)
+                {
+                    await DisconnectClient();
+
+                    for (int i = 0; i < 5; i++)
+                    {
+                        try
+                        {
+                            AudioClient = await VoiceChannel.JoinAudio();
+                            break;
+                        }
+                        catch { }
+                    }
+                }
             }
+            catch { }
         }
 
         public async Task DisconnectClient()
         {
-            if (AudioClient != null)
+            try
             {
-                try
+                if (AudioClient != null)
                 {
-                    await AudioClient.Disconnect();
+                    try
+                    {
+                        await AudioClient.Disconnect();
+                    }
+                    catch { }
+                    Sending = null;
+                    AudioClient = null;
                 }
-                catch { }
-                Sending = null;
-                AudioClient = null;
             }
+            catch { }
         }
 
         public void Enqueue(string Query, Channel Channel, bool Local = false)
@@ -163,7 +195,7 @@ namespace DiscordBot.Handlers
                 if (Song.Found)
                 {
                     SongQueue.Enqueue(Song);
-                    Send(Channel, "Added `" + Song.Name + "`");
+                    Send(Channel, "Added `" + Song.Name + "` at #" + SongQueue.Count);
                 }
                 else
                 {
@@ -375,8 +407,15 @@ namespace DiscordBot.Handlers
             SongQueue = new ConcurrentQueue<SongData>();
         }
 
-        public int Save(string DataFile)
+        private static Regex AlphaNum = new Regex("[^a-zA-Z0-9 -]");
+        public int Save(object s, Server S)
         {
+            string Identifier = AlphaNum.Replace(((string)s).Trim().ToLower(), "");
+            if (Identifier == string.Empty)
+            {
+                Identifier = S.Id.ToString();
+            }
+
             SongData[] Data;
             if (CurrentSong != null)
             {
@@ -389,7 +428,7 @@ namespace DiscordBot.Handlers
                 Data = SongQueue.ToArray();
             }
 
-            using (BinaryWriter Writer = new BinaryWriter(File.Open(DataFile, FileMode.Create)))
+            using (BinaryWriter Writer = new BinaryWriter(File.Open(Bot.DbDir + "data.playlist." + Identifier + ".txt", FileMode.Create)))
             {
                 Writer.Write(Data.Length);
                 for (int i = 0; i < Data.Length; i++)
@@ -402,32 +441,46 @@ namespace DiscordBot.Handlers
             return Data.Length;
         }
 
-        public int Load(string DataFile)
+        public async void Load(Server S, string s = "", Channel C = null)
         {
+            string Identifier = AlphaNum.Replace(s.Trim().ToLower(), "");
+            Message M = null;
+            if (Identifier == string.Empty)
+            {
+                Identifier = S.Id.ToString();
+            }
+            else if (C != null)
+            {
+                M = await SendAsync(C, "Adding..");
+            }
+
+            string DataFile = Bot.DbDir + "data.playlist." + Identifier + ".txt";
+            if (!File.Exists(DataFile))
+            {
+                await EditAsync(M, "Can't find " + DataFile);
+                return;
+            }
+
             int Count = 0;
-            ConcurrentQueue<SongData> Queue = new ConcurrentQueue<SongData>(SongQueue);
 
             using (BinaryReader Reader = new BinaryReader(File.Open(DataFile, FileMode.Open)))
             {
                 Count = Reader.ReadInt32();
-                Task<SongData>[] Tasks = new Task<SongData>[Count];
+                SongData Song;
                 
-                for (int i = 0; i < Count; i++)
+                await Task.Run(async () =>
                 {
-                    string Query = Reader.ReadString();
-                    bool Local = Reader.ReadBoolean();
-                    Tasks[i] = Task.Run(() => { return new SongData(Query, Local); });
-                }
+                    for (int i = 0; i < Count; i++)
+                    {
+                        Song = new SongData(Reader.ReadString(), Reader.ReadBoolean());
+                        SongQueue.Enqueue(Song);
 
-                foreach (Task<SongData> T in Tasks)
-                {
-                    T.Wait();
-                    Queue.Enqueue(T.Result);
-                }
+                        await EditAsync(M, $"[{i}/{Count}] Added `{Song.Name}` at #{SongQueue.Count}");
+                    }
+                });
+
+                await EditAsync(M, "Loaded the saved playlist(" + Count + " songs). Use `#playlist` to view it");
             }
-
-            SongQueue = Queue;
-            return Count;
         }
 
         ~MusicHandler()

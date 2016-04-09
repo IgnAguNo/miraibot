@@ -141,45 +141,27 @@ namespace DiscordBot.Commands
             ServerData.Servers[e.Server.Id].Music.SendPlaylist(e.Channel);
         }
 
-        private static Regex AlphaNum = new Regex("[^a-zA-Z0-9 -]");
         public static void Save(object s, MessageEventArgs e)
         {
-            string Identifier = AlphaNum.Replace(((string)s).Trim().ToLower(), "");
-            if (Identifier == string.Empty)
-            {
-                Identifier = e.Server.Id.ToString();
-            }
-
-            int Count = ServerData.Servers[e.Server.Id].Music.Save("data.playlist." + Identifier + ".txt");
+            int Count = ServerData.Servers[e.Server.Id].Music.Save(s, e.Server);
             Bot.Send(e.Channel, "Saved the playlist (" + Count + " songs). Use `#load` to load it again");
         }
 
         public static void Load(object s, MessageEventArgs e)
         {
-            string Identifier = e.Server.Id.ToString();
-
-            string Query = AlphaNum.Replace(((string)s).Trim().ToLower(), "");
-            if (Query != string.Empty)
-            {
-                Identifier = Query;
-            }
-
-            string Playlist = "data.playlist." + Identifier + ".txt";
-            if (File.Exists(Playlist))
-            {
-                int Count = ServerData.Servers[e.Server.Id].Music.Load(Playlist);
-                Bot.Send(e.Channel, "Loaded the saved playlist (" + Count + " songs). Use `#playlist` to view it");
-            }
-            else
-            {
-                Bot.Send(e.Channel, "Can't find " + Playlist);
-            }
+            ServerData.Servers[e.Server.Id].Music.Load(e.Server, (string)s, e.Channel);
         }
 
         public static void Pair(object s, MessageEventArgs e)
         {
-            TelegramIntegration.NextPairId = e.Server.Id;
+            TelegramIntegration.NextPairChannel = e.Channel;
             Bot.Send(e.Channel, e.Server.Name + " is waiting to be paired to a Telegram server");
+        }
+
+        public static void Unpair(object s, MessageEventArgs e)
+        {
+            Db.RemoveDiscordServerId(e.Server.Id);
+            Bot.Send(e.Channel, "Removed all links with Telegram");
         }
 
         public static void TgToggle(object s, MessageEventArgs e)
@@ -206,6 +188,11 @@ namespace DiscordBot.Commands
             {
                 Bot.Send(e.Channel, "That username couldn't be found");
             }
+        }
+
+        public static void Adhd(object s, MessageEventArgs e)
+        {
+            ServerData.Servers[e.Server.Id].Music.ADHD = !ServerData.Servers[e.Server.Id].Music.ADHD;
         }
     }
 }

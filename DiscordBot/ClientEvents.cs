@@ -1,7 +1,7 @@
 ﻿using Discord;
 using DiscordBot.Commands;
-using DiscordBot.Handlers;
 using System;
+using System.Collections.Concurrent;
 
 namespace DiscordBot
 {
@@ -45,7 +45,7 @@ namespace DiscordBot
             }
         }
 
-        public static void MessageReceived(object s, MessageEventArgs e)
+        public static async void MessageReceived(object s, MessageEventArgs e)
         {
             if (!e.Message.IsAuthor)
             {
@@ -53,7 +53,19 @@ namespace DiscordBot
                 {
                     if (Bot.OwnerAccount != null)
                     {
-                        Bot.OwnerAccount.SendMessage(e.User.Name + " sent: `" + e.Message.Text.Replace("`", "") + "`");
+                        string sUserId = e.Message.Text.Split(' ')[0];
+                        ulong UserId;
+
+                        if (Bot.OwnerAccount.Id == e.User.Id && ulong.TryParse(sUserId, out UserId))
+                        {
+                            Channel PM = await Bot.Client.CreatePrivateChannel(UserId);
+                            await PM.SendMessage(e.Message.Text.Substring(sUserId.Length).Trim());
+                            await PM.Delete();
+                        }
+                        else
+                        {
+                            await Bot.OwnerAccount.SendMessage($"[{e.User.Id}] {e.User.Name} sent: `{e.Message.Text.Replace("`", "")}`");
+                        }
                     }
                 }
                 else

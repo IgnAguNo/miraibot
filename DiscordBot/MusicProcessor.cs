@@ -10,7 +10,6 @@ namespace DiscordBot
     class MusicProcessor
     {
         private static int MaxBuffer = (int)Math.Pow(2, 15);
-        private const ushort BufferSize = 1920 * 2;
 
         public SongData Song;
         public bool Skip = false;

@@ -1,18 +1,19 @@
 ﻿using Discord;
+using Google.Apis.Services;
+using Google.Apis.YouTube.v3;
+using Google.Apis.YouTube.v3.Data;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace DiscordBot.Commands
 {
     class Search
     {
-        public static async void Ask(object s, MessageEventArgs e)
+        public static void Ask(object s, MessageEventArgs e)
         {
             try
             {
@@ -21,7 +22,7 @@ namespace DiscordBot.Commands
                 while (Type == "Neutral")
                 {
                     var reqString = "https://8ball.delegator.com/magic/JSON/" + Uri.EscapeUriString((string)s);
-                    Ask = JObject.Parse(await reqString.ResponseAsync());
+                    Ask = JObject.Parse(reqString.WebResponse());
                     Type = Ask["magic"]["type"].ToString();
                 }
 
@@ -33,11 +34,11 @@ namespace DiscordBot.Commands
             }
         }
 
-        public static async void Youtube(object s, MessageEventArgs e)
+        public static void Youtube(object s, MessageEventArgs e)
         {
             try
             {
-                string Url = await YoutubeResult((string)s);
+                string Url = YoutubeResult((string)s);
                 if (Url != string.Empty)
                 {
                     Bot.Send(e.Channel, "I think I found it.. " + Url);
@@ -52,12 +53,12 @@ namespace DiscordBot.Commands
             Bot.Send(e.Channel, e.User.Mention + " " + Conversation.CantFind);
         }
 
-        public static async void Image(object s, MessageEventArgs e)
+        public static void Image(object s, MessageEventArgs e)
         {
             try
             {
                 string Req = "https://www.googleapis.com/customsearch/v1?q=" + Uri.EscapeDataString((string)s) + "&cx=018084019232060951019%3Ahs5piey28-e&num=1&searchType=image&start=" + new Random().Next(1, 15) + "&fields=items%2Flink&key=" + Bot.GoogleAPI;
-                JObject obj = JObject.Parse(await Req.ResponseAsync());
+                JObject obj = JObject.Parse(Req.WebResponse());
                 Bot.Send(e.Channel, obj["items"][0]["link"].ToString());
             }
             catch
@@ -100,10 +101,10 @@ namespace DiscordBot.Commands
                 Query = Query.Substring(3);
             }
 
-            Search.DefineSimple(Query, e);
+            DefineSimple(Query, e);
         }
 
-        public static async void DefineSimple(object s, MessageEventArgs e)
+        public static void DefineSimple(object s, MessageEventArgs e)
         {
             try
             {
@@ -113,7 +114,7 @@ namespace DiscordBot.Commands
                 {
                     WebHeaderCollection Headers = new WebHeaderCollection();
                     Headers.Add("X-Mashape-Key", Bot.MashapeAPI);
-                    JObject Json = JObject.Parse(await ($"https://mashape-community-urban-dictionary.p.mashape.com/define?term=" + Uri.EscapeUriString(Query)).ResponseAsync(Headers));
+                    JObject Json = JObject.Parse($"https://mashape-community-urban-dictionary.p.mashape.com/define?term={Uri.EscapeUriString(Query)}".WebResponse(Headers));
                     Bot.Send(e.Channel, Json["list"][0]["definition"].ToString());
                 }
             }
@@ -214,11 +215,26 @@ namespace DiscordBot.Commands
             return API;
         }
 
+        private static YouTubeService YT = new YouTubeService(new BaseClientService.Initializer()
+        {
+            ApiKey = Bot.GoogleAPI
+        });
+
         //Made by owner of Nadekobot
-        public static async Task<string> YoutubeResult(string Query)
+        public static string YoutubeResult(string Query)
         {
             try
             {
+                var listRequest = YT.Search.List("snippet");
+                listRequest.Q = Query;
+                listRequest.MaxResults = 1;
+                listRequest.Type = "video";
+                foreach (SearchResult result in listRequest.Execute().Items)
+                {
+                    return "http://www.youtube.com/watch?v=" + result.Id.VideoId;
+                }
+
+                /*
                 //maybe it is already a youtube url, in which case we will just extract the id and prepend it with youtube.com?v=
                 Match Match = new Regex("(?:youtu\\.be\\/|v=)(?<id>[\\da-zA-Z\\-_]*)").Match(Query);
                 if (Match.Length > 1)
@@ -231,6 +247,7 @@ namespace DiscordBot.Commands
 
                 JObject obj = JObject.Parse(await sr.ReadToEndAsync());
                 return "http://www.youtube.com/watch?v=" + obj["items"][0]["id"]["videoId"].ToString();
+                */
             }
             catch { }
 

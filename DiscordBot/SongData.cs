@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using VideoLibrary;
 
 namespace DiscordBot
@@ -46,33 +45,48 @@ namespace DiscordBot
                 {
                     FullName = Query.Substring(MusicDir.Length);
                     Found = true;
+                    return;
                 }
-                else if (Regex.IsMatch(Query, "(.*)(soundcloud.com|snd.sc)(.*)"))
+
+                if (Regex.IsMatch(Query, "(.*)(soundcloud.com|snd.sc)(.*)"))
                 {
-                    Task<string> SC = ("http://api.soundcloud.com/resolve?url=" + Query + "&client_id=" + Bot.SoundCloudAPI).ResponseAsync();
-                    SC.Wait();
-                    if (SC.Result != string.Empty && SC.Result.StartsWith("{\"kind\":\"track\""))
+                    string SC = ("http://api.soundcloud.com/resolve?url=" + Query + "&client_id=" + Bot.SoundCloudAPI).WebResponse();
+                    if (SC != string.Empty && SC.StartsWith("{\"kind\":\"track\""))
                     {
-                        JObject Response = JObject.Parse(SC.Result);
+                        JObject Response = JObject.Parse(SC);
                         FullName = Response["title"].ToString();
                         Url = Response["stream_url"] + "?client_id=" + Bot.SoundCloudAPI;
                         Found = true;
                     }
+
+                    return;
                 }
-                else if (Query.IsValidUrl() && !Regex.IsMatch(Query, @"http(s)?://(www\.)?(youtu\.be|youtube\.com)[\w-/=&?]+"))
+
+                string Yt = string.Empty;
+                if (Query.IsValidUrl())
                 {
-                    Found = true;
+                    if (Regex.IsMatch(Query, @"http(s)?://(www\.)?(youtu\.be|youtube\.com)[\w-/=&?]+"))
+                    {
+                        Yt = Query;
+                    }
+                    else
+                    {
+                        Found = true;
+                        return;
+                    }
                 }
                 else
                 {
-                    Task<string> YtLink = Search.YoutubeResult(Query);
-                    YtLink.Wait();
+                    Yt = Search.YoutubeResult(Query);
+                }
 
-                    if (YtLink.Result != string.Empty)
+                if (Yt != string.Empty)
+                {
+                    try
                     {
-                        Task<IEnumerable<YouTubeVideo>> YtVids = YouTube.Default.GetAllVideosAsync(YtLink.Result);
-                        YtVids.Wait();
-                        IOrderedEnumerable<YouTubeVideo> Videos = YtVids.Result.Where(v => v.AdaptiveKind == AdaptiveKind.Audio).OrderByDescending(v => v.AudioBitrate);
+                        IEnumerable<YouTubeVideo> Videos = YouTube.Default.GetAllVideos(Yt);
+                        Videos = Videos.Where(v => v.AdaptiveKind == AdaptiveKind.Audio);
+                        Videos = Videos.OrderByDescending(v => v.AudioBitrate);
 
                         if (Videos.Count() > 0)
                         {
@@ -81,13 +95,15 @@ namespace DiscordBot
                             Url = Video.Uri;
                             Found = true;
                         }
+
+                    }
+                    catch //(Exception Ex)
+                    {
+                        //$"Video Load Error {Ex}".Log();
                     }
                 }
             }
-            catch (Exception Ex)
-            {
-                $"SongData Resolve Exception {Ex}".Log();
-            }
+            catch { }
         }
     }
 }

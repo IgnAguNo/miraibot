@@ -1,0 +1,5 @@
+C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\libvideo\bin\Debug\libvideo.dll
+C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\libvideo\bin\Debug\libvideo.pdb
+C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\libvideo\obj\Debug\libvideo.csprojResolveAssemblyReference.cache
+C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\libvideo\obj\Debug\libvideo.dll
+C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\libvideo\obj\Debug\libvideo.pdb

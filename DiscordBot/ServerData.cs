@@ -10,7 +10,7 @@ namespace DiscordBot
     {
         public static Dictionary<ulong, ServerData> Servers = new Dictionary<ulong, ServerData>();
 
-        private Server Server;
+        public Server Server;
         public MusicHandler Music;
         public ConcurrentDictionary<ulong, TriviaHandler> Trivia = new ConcurrentDictionary<ulong, TriviaHandler>();
         private ConcurrentDictionary<ulong, List<Command>> ChannelCommands = new ConcurrentDictionary<ulong, List<Command>>();
@@ -27,7 +27,7 @@ namespace DiscordBot
         {
             Server = UseServer;
 
-            Music = new MusicHandler();
+            Music = new MusicHandler(UseServer);
             Music.Run();
         }
 
