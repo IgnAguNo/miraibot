@@ -3,9 +3,9 @@ using Discord.Audio;
 using DiscordBot.Commands;
 using DiscordBot.Handlers;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -163,6 +163,9 @@ namespace DiscordBot
                     "Crashed due to an uncaught exception, saved data for next boot".Log();
                 };
 
+                handler = new ConsoleEventDelegate(ConsoleEventCallback);
+                SetConsoleCtrlHandler(handler, true);
+
                 "Booted! Waiting for input".Log();
             });
         }
@@ -178,58 +181,62 @@ namespace DiscordBot
 
         public static async Task<Message> SendAsync(Channel Channel, string Message, Stream Stream = null, bool SpamProtection = true)
         {
-            try
+            for (int i = 0; i < 5; i++)
             {
-                if (Channel == null || Message == null || Message == string.Empty || !Channel.GetUser(Client.CurrentUser.Id).GetPermissions(Channel).SendMessages)
+                try
                 {
-                    return null;
-                }                
+                    if (Channel == null || Message == null || Message == string.Empty || !Channel.GetUser(Client.CurrentUser.Id).GetPermissions(Channel).SendMessages)
+                    {
+                        return null;
+                    }
 
-                if (SpamProtection && Client.MessageQueue.Count > 3)
-                {
-                    $"Spam: {Message.Compact()}".Log();
-                    Client.MessageQueue.Clear();
-                    Spam++;
+                    if (SpamProtection && Client.MessageQueue.Count > 3)
+                    {
+                        $"Spam: {Message.Compact()}".Log();
+                        Client.MessageQueue.Clear();
+                        Spam++;
 
-                    return null;
-                }
+                        return null;
+                    }
 
-                int Max = 2000;
-                if (Message.Length > Max)
-                {
-                    Message = Message.Substring(0, Max - 3) + "...";
-                }
+                    int Max = 2000;
+                    if (Message.Length > Max)
+                    {
+                        Message = Message.Substring(0, Max - 3) + "...";
+                    }
 
-                Msgs++;
-                if (Stream != null)
-                {
-                    return await Channel.SendFile(Message, Stream);
+                    Msgs++;
+                    if (Stream != null)
+                    {
+                        return await Channel.SendFile(Message, Stream);
+                    }
+                    else
+                    {
+                        return await Channel.SendMessage(Message);
+                    }
                 }
-                else
+                catch (Exception Ex)
                 {
-                    return await Channel.SendMessage(Message);
+                    Client.Log.Log(LogSeverity.Error, Channel.Name, Message.Compact(), Ex);
+                    await Task.Delay(500);
                 }
-            }
-            catch (Exception Ex)
-            {
-                Client.Log.Log(LogSeverity.Error, Channel.Name, Message.Compact(), Ex);
             }
 
             return null;
         }
 
-        public static async void Shutdown()
+        public static void Shutdown()
         {
-            foreach (KeyValuePair<ulong, ServerData> KVP in ServerData.Servers)
+            "Disconnecting..".Log();
+
+            foreach (ServerData SD in ServerData.Servers.Values)
             {
-                KVP.Value.Music.Save(string.Empty, KVP.Value.Server);
-                await KVP.Value.Music.DisconnectClient();
+                $"{SD.Music.Save(SD.Server)} songs saved in {SD.Name}".Log();
+                SD.StopHandlers();
             }
 
-            "Disconnecting".Log();
-
-            await Task.Delay(350);
-            await Client.Disconnect();
+            Task.Delay(350).Wait();
+            Client.Disconnect().Wait();
         }
 
         private static void InitCommands()
@@ -248,7 +255,9 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, "setname", "Changes my name", Administration.SetName),
                 new Command(Command.PrefixType.Command, "setavatar", "Changes my avatar", Administration.SetAvatar),
                 new Command(Command.PrefixType.Command, "prune", "Removes some message history", Administration.Prune),
-                new Command(Command.PrefixType.Command, "fix", "Clears the message queue", Administration.Fix)
+                new Command(Command.PrefixType.Command, "fix", "Clears the message queue", Administration.Fix),
+                new Command(Command.PrefixType.Command, "joinserver", "Joins a server through an invite link", Administration.JoinServer),
+                new Command(Command.PrefixType.Command, "leaveserver", "Leaves this server, add my mention to confirm", Administration.LeaveServer)
             });
 
             CommandParser.Categories.Add(typeof(Music).Name, new Command[] {
@@ -345,6 +354,24 @@ namespace DiscordBot
                 new Command(Command.PrefixType.None, "/lenny", "", "( ͡° ͜ʖ ͡°)"),
                 new Command(Command.PrefixType.None, "$$$", "", Trivia.Points)
             });
+        }
+
+        static ConsoleEventDelegate handler; 
+        private delegate bool ConsoleEventDelegate(int eventType);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
+
+        static bool ConsoleEventCallback(int eventType)
+        {
+            if (eventType == 2)
+            {
+                "Caught close-button press, shutting down..".Log();
+                Shutdown();
+                return false;
+            }
+
+            return true;
         }
     }
 }

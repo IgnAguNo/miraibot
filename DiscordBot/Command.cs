@@ -30,14 +30,14 @@ namespace DiscordBot
         public Command(PrefixType Prefix, string[] Key, string Description, string Response)
         {
             Init(Prefix, Key, Description, (s, e) => {
-                Bot.Send(e.Channel, Response);
+                e.Respond(Response);
             });
         }
 
         public Command(PrefixType Prefix, string Key, string Description, string Response)
         {
             Init(Prefix, new string[] { Key }, Description, (s, e) => {
-                Bot.Send(e.Channel, Response);
+                e.Respond(Response);
             });
         }
 

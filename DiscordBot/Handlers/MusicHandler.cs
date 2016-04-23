@@ -22,6 +22,7 @@ namespace DiscordBot.Handlers
 
         private MusicProcessor CurrentSong;
         private Task Sending = null;
+        private bool StopRequested = false;
 
         public float Volume = 1.0f;
         public bool ADHD = false;
@@ -57,7 +58,7 @@ namespace DiscordBot.Handlers
             byte[] CurrentSend = null;
             byte[] NextSend = null;
 
-            while (true)
+            while (!StopRequested)
             {
                 try
                 {
@@ -68,8 +69,21 @@ namespace DiscordBot.Handlers
                         CurrentSong = null;
                     }
 
-                    if (AudioClient != null && AudioClient.State == ConnectionState.Connected)
+                    if (AudioClient != null)
                     {
+                        if (AudioClient.State != ConnectionState.Connected)
+                        {
+                            try
+                            {
+                                AudioClient = await AudioClient.Channel.JoinAudio();
+                            }
+                            catch
+                            {
+                                await DisconnectClient();
+                                continue;
+                            }
+                        }
+
                         if (CurrentSong == null)
                         {
                             //Dequeue a song
@@ -94,7 +108,7 @@ namespace DiscordBot.Handlers
                             {
                                 if (Sending != null)
                                 {
-                                    //Sending.Wait(1000);
+                                    Sending.Wait(1000);
                                 }
 
                                 Sending = AudioClient.OutputStream.WriteAsync(NextSend, 0, NextSend.Length);
@@ -145,28 +159,40 @@ namespace DiscordBot.Handlers
                     $"Music Handler Loop Exception: {Ex}".Log();
                 }
             }
+
+            try
+            {
+                if (CurrentSong != null)
+                {
+                    CurrentSong.Skip = true;
+                }
+            }
+            catch { }
+
+            await DisconnectClient();
         }
 
         public async Task ConnectClient(Channel VoiceChannel)
         {
-            try
-            {
-                if (AudioClient == null || AudioClient.Channel.Id != VoiceChannel.Id || AudioClient.State != ConnectionState.Connected)
-                {
-                    await DisconnectClient();
+            await DisconnectClient();
 
-                    for (int i = 0; i < 5; i++)
-                    {
-                        try
-                        {
-                            AudioClient = await VoiceChannel.JoinAudio();
-                            break;
-                        }
-                        catch { }
-                    }
+            for (int i = 0; i < 10; i++)
+            {
+                try
+                {
+                    AudioClient = await VoiceChannel.JoinAudio();
+                    break;
                 }
+                catch { }
             }
-            catch { }
+        }
+
+        public void OptionalConnectClient(Channel VoiceChannel)
+        {
+            if (VoiceChannel != null && (AudioClient == null || AudioClient.State != ConnectionState.Connected))
+            {
+                ConnectClient(VoiceChannel).Wait();
+            }
         }
 
         public async Task DisconnectClient()
@@ -179,12 +205,19 @@ namespace DiscordBot.Handlers
                     {
                         await AudioClient.Disconnect();
                     }
-                    catch { }
+                    catch (Exception Ex)
+                    {
+                        Ex.Log();
+                    }
+                    
                     Sending = null;
                     AudioClient = null;
                 }
             }
-            catch { }
+            catch (Exception Ex)
+            {
+                Ex.Log();
+            }
         }
 
         public void Enqueue(string Query, Channel Channel, bool Local = false)
@@ -408,9 +441,9 @@ namespace DiscordBot.Handlers
         }
 
         private static Regex AlphaNum = new Regex("[^a-zA-Z0-9 -]");
-        public int Save(object s, Server S)
+        public int Save(Server S, string s = "")
         {
-            string Identifier = AlphaNum.Replace(((string)s).Trim().ToLower(), "");
+            string Identifier = AlphaNum.Replace(s.Trim().ToLower(), "");
             if (Identifier == string.Empty)
             {
                 Identifier = S.Id.ToString();
@@ -479,8 +512,14 @@ namespace DiscordBot.Handlers
                     }
                 });
 
-                await EditAsync(M, "Loaded the saved playlist(" + Count + " songs). Use `#playlist` to view it");
+                await Task.Delay(500);
+                await EditAsync(M, "Loaded the saved playlist (" + Count + " songs). Use `#playlist` to view it");
             }
+        }
+
+        public void Stop()
+        {
+            StopRequested = true;
         }
 
         ~MusicHandler()

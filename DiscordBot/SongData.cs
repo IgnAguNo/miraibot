@@ -11,7 +11,6 @@ namespace DiscordBot
     class SongData
     {
         public static string MusicDir = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music\\";
-        //private static string[] MusicExtentions = new string[] { "mp3", "mp4", "webm", "flac" };
 
         public bool Found;
         public string Query;
@@ -82,24 +81,16 @@ namespace DiscordBot
 
                 if (Yt != string.Empty)
                 {
-                    try
-                    {
-                        IEnumerable<YouTubeVideo> Videos = YouTube.Default.GetAllVideos(Yt);
-                        Videos = Videos.Where(v => v.AdaptiveKind == AdaptiveKind.Audio);
-                        Videos = Videos.OrderByDescending(v => v.AudioBitrate);
+                    IEnumerable<YouTubeVideo> Videos = YouTube.Default.GetAllVideos(Yt);
+                    Videos = Videos.Where(v => v.AdaptiveKind == AdaptiveKind.Audio);
+                    Videos = Videos.OrderByDescending(v => v.AudioBitrate);
 
-                        if (Videos.Count() > 0)
-                        {
-                            YouTubeVideo Video = Videos.First();
-                            FullName = Video.Title.Substring(0, Video.Title.Length - 10);
-                            Url = Video.Uri;
-                            Found = true;
-                        }
-
-                    }
-                    catch //(Exception Ex)
+                    if (Videos.Count() > 0)
                     {
-                        //$"Video Load Error {Ex}".Log();
+                        YouTubeVideo Video = Videos.First();
+                        FullName = Video.Title.Substring(0, Video.Title.Length - 10);
+                        Url = Video.Uri;
+                        Found = true;
                     }
                 }
             }

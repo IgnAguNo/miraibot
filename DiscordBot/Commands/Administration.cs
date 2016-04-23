@@ -6,6 +6,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace DiscordBot.Commands
@@ -22,7 +23,7 @@ namespace DiscordBot.Commands
                 if (int.TryParse(Parts[1], out Rank) && Rank < 100)
                 {
                     Db.SetPerm(Parts[0], Rank);
-                    Bot.Send(e.Channel, "Updated `" + Parts[0] + "` to a minimum rank of " + Rank);
+                    e.Respond("Updated `" + Parts[0] + "` to a minimum rank of " + Rank);
                 }
             }
         }
@@ -38,7 +39,7 @@ namespace DiscordBot.Commands
                     if (int.TryParse(Parts[1], out Rank) && Rank < 100)
                     {
                         Db.SetRank(e.Message.MentionedUsers.First().Id, Rank);
-                        Bot.Send(e.Channel, e.Message.MentionedUsers.First().Mention + " is now rank " + Rank);
+                        e.Respond(e.Message.MentionedUsers.First().Mention + " is now rank " + Rank);
                     }
                 }
             }
@@ -64,18 +65,22 @@ namespace DiscordBot.Commands
                 Ranks[Rank].Add(User.Mention);
             }
 
-            string Msg = string.Empty;
+            var Msg = new StringBuilder();
             foreach (KeyValuePair<int, List<string>> KVP in Ranks.OrderBy(x => -x.Key))
             {
-                Msg += "Rank " + KVP.Key + ": " + String.Join(", ", KVP.Value) + "\n";
+                Msg.Append("Rank ");
+                Msg.Append(KVP.Key);
+                Msg.Append(": ");
+                Msg.Append(string.Join(", ", KVP.Value));
+                Msg.Append("\n");
             }
 
-            Bot.Send(e.Channel, Msg);
+            e.Respond(Msg.ToString());
         }
 
         public static void Sleep(object s, MessageEventArgs e)
         {
-            Bot.Send(e.Channel, "Bye!");
+            e.Respond("Bye!");
             Bot.Shutdown();
         }
 
@@ -159,6 +164,30 @@ namespace DiscordBot.Commands
             Bot.Client.MessageQueue.Clear();
             Db.FlushCache();
             GC.Collect();
+        }
+
+        public static async void JoinServer(object s, MessageEventArgs e)
+        {
+            var Invite = await Bot.Client.GetInvite((string)s);
+            if (Invite != null && !Invite.IsRevoked)
+            {
+                await Invite.Accept();
+                //e.Respond("Joined server");
+            }
+            /*else
+            {
+                e.Respond("Could not join that server");
+            }*/
+        }
+        
+        public static async void LeaveServer(object s, MessageEventArgs e)
+        {
+            if (e.Message.MentionedUsers.Any(x => x.Id == Bot.Client.CurrentUser.Id))
+            {
+                ServerData.Servers[e.Server.Id].StopHandlers();
+                await ServerData.Servers[e.Server.Id].Server.Leave();
+                ServerData.Servers.Remove(e.Server.Id);
+            }
         }
     }
 }

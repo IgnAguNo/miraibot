@@ -8,7 +8,7 @@ namespace DiscordBot.Commands
     {
         public static void RandomLewd(object s, MessageEventArgs e)
         {
-            Bot.Send(e.Channel, GetRandomLewd(s, true));
+            e.Respond(GetRandomLewd(s, true));
         }
 
         public static string GetRandomLewd(object s, bool FilterKnK)

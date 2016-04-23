@@ -92,11 +92,11 @@ namespace DiscordBot
             {
                 if (Db.ChannelToggleCategory(e.Channel.Id, Cat))
                 {
-                    Bot.Send(e.Channel, Cat + " has now been enabled");
+                    e.Respond(Cat + " has now been enabled");
                 }
                 else
                 {
-                    Bot.Send(e.Channel, Cat + " has now been disabled");
+                    e.Respond(Cat + " has now been disabled");
                 }
 
                 ServerData.Servers[e.Server.Id].ReloadCommands(e.Channel.Id);
@@ -147,7 +147,7 @@ namespace DiscordBot
                         }
                     }
 
-                    Bot.Send(e.Channel, (Cat.Key == String.Empty ? "**Main**" : "**" + Cat.Key + "**") + "\n" + CatInfo);
+                    e.Respond((Cat.Key == string.Empty ? "**Main**" : "**" + Cat.Key + "**") + "\n" + CatInfo);
                     await Task.Delay(250);
                 }
             }

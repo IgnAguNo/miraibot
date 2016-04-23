@@ -3,7 +3,6 @@ using DiscordBot.Handlers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace DiscordBot.Commands
 {
@@ -17,7 +16,7 @@ namespace DiscordBot.Commands
             }
             else
             {
-                Bot.Send(e.Channel, "..where do you want me to join?");
+                e.Respond("..where do you want me to join?");
             }
         }
 
@@ -29,6 +28,7 @@ namespace DiscordBot.Commands
         public static void Add(object s, MessageEventArgs e)
         {
             ServerData.Servers[e.Server.Id].Music.Enqueue((string)s, e.Channel);
+            ServerData.Servers[e.Server.Id].Music.OptionalConnectClient(e.User.VoiceChannel);
         }
 
         private static string[] Files = null;
@@ -52,12 +52,13 @@ namespace DiscordBot.Commands
                 Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(Search)).ToArray();
                 if (Files.Length == 0)
                 {
-                    Bot.Send(e.Channel, Conversation.CantFind);
+                    e.Respond(Conversation.CantFind);
                 }
                 else if (Files.Length == 1)
                 {
                     string Name = Files[0].Substring(SongData.MusicDir.Length);
                     ServerData.Servers[e.Server.Id].Music.Enqueue(Files[0], e.Channel, true);
+                    ServerData.Servers[e.Server.Id].Music.OptionalConnectClient(e.User.VoiceChannel);
                 }
                 else
                 {
@@ -67,12 +68,13 @@ namespace DiscordBot.Commands
                         Info += (i + 1) + ". `" + Files[i].Substring(SongData.MusicDir.Length).Compact() + "`\n";
                     }
 
-                    Bot.Send(e.Channel, "Multiple files found\n" + Info);
+                    e.Respond("Multiple files found\n" + Info);
                 }
             }
             else
             {
                 ServerData.Servers[e.Server.Id].Music.Enqueue(ToAdd, e.Channel, true);
+                ServerData.Servers[e.Server.Id].Music.OptionalConnectClient(e.User.VoiceChannel);
             }
         }
 
@@ -143,8 +145,8 @@ namespace DiscordBot.Commands
 
         public static void Save(object s, MessageEventArgs e)
         {
-            int Count = ServerData.Servers[e.Server.Id].Music.Save(s, e.Server);
-            Bot.Send(e.Channel, "Saved the playlist (" + Count + " songs). Use `#load` to load it again");
+            int Count = ServerData.Servers[e.Server.Id].Music.Save(e.Server, (string)s);
+            e.Respond("Saved the playlist (" + Count + " songs). Use `#load` to load it again");
         }
 
         public static void Load(object s, MessageEventArgs e)
@@ -155,13 +157,13 @@ namespace DiscordBot.Commands
         public static void Pair(object s, MessageEventArgs e)
         {
             TelegramIntegration.NextPairChannel = e.Channel;
-            Bot.Send(e.Channel, e.Server.Name + " is waiting to be paired to a Telegram server");
+            e.Respond(e.Server.Name + " is waiting to be paired to a Telegram server");
         }
 
         public static void Unpair(object s, MessageEventArgs e)
         {
             Db.RemoveDiscordServerId(e.Server.Id);
-            Bot.Send(e.Channel, "Removed all links with Telegram");
+            e.Respond("Removed all links with Telegram");
         }
 
         public static void TgToggle(object s, MessageEventArgs e)
@@ -175,18 +177,18 @@ namespace DiscordBot.Commands
                     if (TelegramIntegration.Blocked.Contains(User.Key))
                     {
                         TelegramIntegration.Blocked.Remove(User.Key);
-                        Bot.Send(e.Channel, "Unblocked user " + User.Value);
+                        e.Respond("Unblocked user " + User.Value);
                     }
                     else
                     {
                         TelegramIntegration.Blocked.Add(User.Key);
-                        Bot.Send(e.Channel, "Blocked user " + User.Value);
+                        e.Respond("Blocked user " + User.Value);
                     }
                 }
             }
             else
             {
-                Bot.Send(e.Channel, "That username couldn't be found");
+                e.Respond("That username couldn't be found");
             }
         }
 

@@ -24,7 +24,7 @@ namespace DiscordBot.Commands
             if (((string)s).Trim() != String.Empty)
             {
                 string[] Split = ((string)s).Replace(" and ", ",").Split(',');
-                Bot.Send(e.Channel, "I choose " + Split[new Random().Next(0, Split.Length)].Trim());
+                e.Respond("I choose " + Split[new Random().Next(0, Split.Length)].Trim());
             }
         }
 
@@ -33,11 +33,11 @@ namespace DiscordBot.Commands
             var OwnerAccount = e.Server.GetUser(Bot.Owner);
             if (OwnerAccount != null && OwnerAccount.Status == UserStatus.Online)
             {
-                Bot.Send(e.Channel, "I'm fine :D");
+                e.Respond("I'm fine :D");
             }
             else
             {
-                Bot.Send(e.Channel, "I feel lonely");
+                e.Respond("I feel lonely");
             }
         }
 
@@ -45,11 +45,11 @@ namespace DiscordBot.Commands
         {
             if (e.User.Id == Bot.Owner)
             {
-                Bot.Send(e.Channel, "Yes!");
+                e.Respond("Yes!");
             }
             else
             {
-                Bot.Send(e.Channel, "No..");
+                e.Respond("No..");
             }
         }
 
@@ -63,7 +63,7 @@ namespace DiscordBot.Commands
                 {
                     if (Insult.Id == Bot.Owner)
                     {
-                        Bot.Send(e.Channel, "I would never do that!");
+                        e.Respond("I would never do that!");
                     }
                     else
                     {
@@ -76,7 +76,7 @@ namespace DiscordBot.Commands
                             " you weird glasses-fetishist"
                         };
 
-                        Bot.Send(e.Channel, Insult.Mention + Insults[new Random().Next(0, Insults.Length)]);
+                        e.Respond(Insult.Mention + Insults[new Random().Next(0, Insults.Length)]);
                     }
                 }
             }
@@ -92,7 +92,7 @@ namespace DiscordBot.Commands
                 {
                     if (Insult.Id == Bot.Owner)
                     {
-                        Bot.Send(e.Channel, "I don't need you for that!");
+                        e.Respond("I don't need you for that!");
                     }
                     else
                     {
@@ -102,7 +102,7 @@ namespace DiscordBot.Commands
                             " is awesome"
                         };
 
-                        Bot.Send(e.Channel, Insult.Mention + Compliments[new Random().Next(0, Compliments.Length)]);
+                        e.Respond(Insult.Mention + Compliments[new Random().Next(0, Compliments.Length)]);
                     }
                 }
             }
@@ -118,7 +118,7 @@ namespace DiscordBot.Commands
                 {
                     if (Insult.Id == Bot.Owner)
                     {
-                        Bot.Send(e.Channel, "Don't make me do this.. Please..");
+                        e.Respond("Don't make me do this.. Please..");
                     }
                     else
                     {
@@ -130,7 +130,7 @@ namespace DiscordBot.Commands
                             "http://45.media.tumblr.com/bc540ab848899db1584a0a04b4ef47a2/tumblr_mvgpuub6Pr1qbvovho1_500.gif"
                         };
 
-                        Bot.Send(e.Channel, Insult.Mention + " " + StabImgs[new Random().Next(0, StabImgs.Length)]);
+                        e.Respond(Insult.Mention + " " + StabImgs[new Random().Next(0, StabImgs.Length)]);
                     }
                 }
             }
@@ -144,7 +144,7 @@ namespace DiscordBot.Commands
                 User Welcome = e.Message.MentionedUsers.FirstOrDefault(m => m.Id != Bot.Client.CurrentUser.Id);
                 if (Welcome != null)
                 {
-                    Bot.Send(e.Channel, "Hi, " + Welcome.Mention + "!");
+                    e.Respond("Hi, " + Welcome.Mention + "!");
                 }
             }
         }
@@ -157,7 +157,7 @@ namespace DiscordBot.Commands
                 User Goodbye = e.Message.MentionedUsers.FirstOrDefault(m => m.Id != Bot.Client.CurrentUser.Id);
                 if (Goodbye != null)
                 {
-                    Bot.Send(e.Channel, "Bye " + Goodbye.Mention + "!");
+                    e.Respond("Bye " + Goodbye.Mention + "!");
                 }
             }
         }
@@ -166,17 +166,17 @@ namespace DiscordBot.Commands
         {
             if (e.User.Id == Bot.Owner)
             {
-                Bot.Send(e.Channel, "I'm short on money so only if you pay");
+                e.Respond("I'm short on money so only if you pay");
             }
             else
             {
-                Bot.Send(e.Channel, "I'm sorry, I don't really want to");
+                e.Respond("I'm sorry, I don't really want to");
             }
         }
 
         public static void Best(object s, MessageEventArgs e)
         {
-            Bot.Send(e.Channel, "*blush*");
+            e.Respond("*blush*");
         }
 
         public static void Cry(object s, MessageEventArgs e)
@@ -186,7 +186,7 @@ namespace DiscordBot.Commands
                 "https://38.media.tumblr.com/882f4ddd8246714ae90d8e14c1128462/tumblr_nwlxaomS7g1rvbl4vo1_500.gif"
             };
 
-            Bot.Send(e.Channel, Cry[new Random().Next(0, Cry.Length)]);
+            e.Respond(Cry[new Random().Next(0, Cry.Length)]);
         }
 
         public static void TakeIt(object s, MessageEventArgs e)
@@ -196,7 +196,7 @@ namespace DiscordBot.Commands
                 "https://s-media-cache-ak0.pinimg.com/originals/e6/d5/8d/e6d58d221ae3df61580d95b34558e2d8.gif"
             };
 
-            Bot.Send(e.Channel, Accept[new Random().Next(0, Accept.Length)]);
+            e.Respond(Accept[new Random().Next(0, Accept.Length)]);
         }
 
         public static void NoBully(object s, MessageEventArgs e)
@@ -207,7 +207,7 @@ namespace DiscordBot.Commands
                 "http://i.imgur.com/j4XBx5X.png"
             };
 
-            Bot.Send(e.Channel, NoBullyResponses[new Random().Next(0, NoBullyResponses.Length)]);
+            e.Respond(NoBullyResponses[new Random().Next(0, NoBullyResponses.Length)]);
         }
 
         public static void Sing(object s, MessageEventArgs e)
@@ -217,7 +217,7 @@ namespace DiscordBot.Commands
                 "http://25.media.tumblr.com/47e605a8b088ca71a1713838a11e736a/tumblr_mvw7o93rfK1soj51lo6_250.gif"
             };
 
-            Bot.Send(e.Channel, Sing[new Random().Next(0, Sing.Length)]);
+            e.Respond(Sing[new Random().Next(0, Sing.Length)]);
         }
 
         public static void Dance(object s, MessageEventArgs e)
@@ -228,7 +228,7 @@ namespace DiscordBot.Commands
                 "http://25.media.tumblr.com/07a02819a2bcc8b85c04df36ba324c4b/tumblr_mvv2oaj8To1rxaojso5_250.gif"
             };
 
-            Bot.Send(e.Channel, Dance[new Random().Next(0, Dance.Length)]);
+            e.Respond(Dance[new Random().Next(0, Dance.Length)]);
         }
 
         public static void GoodNight(object s, MessageEventArgs e)
@@ -238,7 +238,7 @@ namespace DiscordBot.Commands
                 "http://ic.pics.livejournal.com/huneybunni/43864531/23871/23871_600.jpg"
             };
 
-            Bot.Send(e.Channel, "Good.. night.. " + Sleep[new Random().Next(0, Sleep.Length)]);
+            e.Respond("Good.. night.. " + Sleep[new Random().Next(0, Sleep.Length)]);
         }
 
         public static void Trip(object s, MessageEventArgs e)
@@ -248,7 +248,7 @@ namespace DiscordBot.Commands
                 "http://25.media.tumblr.com/c8ace875dd06705abd5396656c34fcdd/tumblr_mu1w6ymQxH1r3rdh2o1_500.gif"
             };
 
-            Bot.Send(e.Channel, Stop[new Random().Next(0, Stop.Length)]);
+            e.Respond(Stop[new Random().Next(0, Stop.Length)]);
         }
 
         public static void Weird(object s, MessageEventArgs e)
@@ -259,7 +259,7 @@ namespace DiscordBot.Commands
                 "Fuyukai desu."
             };
 
-            Bot.Send(e.Channel, Weird[new Random().Next(0, Weird.Length)]);
+            e.Respond(Weird[new Random().Next(0, Weird.Length)]);
         }
 
         public static void Cute(object s, MessageEventArgs e)
@@ -271,7 +271,7 @@ namespace DiscordBot.Commands
                 "http://38.media.tumblr.com/22ace82070d587408d7201243ed5b101/tumblr_inline_myhhim3d6L1svgbgx.gif"
             };
 
-            Bot.Send(e.Channel, Cute[new Random().Next(0, Cute.Length)]);
+            e.Respond(Cute[new Random().Next(0, Cute.Length)]);
         }
 
         public static void Lewd(object s, MessageEventArgs e)
@@ -282,7 +282,7 @@ namespace DiscordBot.Commands
                 "https://45.media.tumblr.com/1abc9678077d4bed98067e1fdc99c5e3/tumblr_n192soAPQ91sgn94ro1_500.gif"
             };
 
-            Bot.Send(e.Channel, Lewd[new Random().Next(0, Lewd.Length)]);
+            e.Respond(Lewd[new Random().Next(0, Lewd.Length)]);
         }
 
         public static void Meme(object s, MessageEventArgs e)
@@ -294,7 +294,7 @@ namespace DiscordBot.Commands
                 Text += "\n" + CharArray[i];
             }
             
-            Bot.Send(e.Channel, Text);
+            e.Respond(Text);
         }
 
         private static string[] Shitposts = new string[] {
@@ -333,7 +333,7 @@ namespace DiscordBot.Commands
 
         public static void Shitpost(object s, MessageEventArgs e)
         {
-            Bot.Send(e.Channel, Shitposts[new Random().Next(0, Shitposts.Length)]);
+            e.Respond(Shitposts[new Random().Next(0, Shitposts.Length)]);
         }
 
         private static string[] Dogmans = new string[] {
@@ -614,7 +614,7 @@ namespace DiscordBot.Commands
 
         public static void Dogman(object s, MessageEventArgs e)
         {
-            Bot.Send(e.Channel, Dogmans[new Random().Next(0, Dogmans.Length)]);
+            e.Respond(Dogmans[new Random().Next(0, Dogmans.Length)]);
         }
     }
 }

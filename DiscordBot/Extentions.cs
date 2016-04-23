@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Discord;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -163,6 +164,11 @@ namespace DiscordBot
             T Result = default(T);
             while (Queue.Count > 0 && !Queue.TryDequeue(out Result));
             return Result;
+        }
+
+        public static void Respond(this MessageEventArgs e, string Text)
+        {
+            Bot.Send(e.Channel, Text);
         }
     }
 }

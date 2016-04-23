@@ -64,3 +64,4 @@ C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\De
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\log4net.xml
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Zlib.Portable.xml
 C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\libvideo.pdb
+C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Telegram.Bot.pdb

@@ -38,7 +38,7 @@ namespace DiscordBot.Commands
             if (S.Trivia.ContainsKey(e.Channel.Id))
             {
                 S.Trivia[e.Channel.Id].Stop();
-                Bot.Send(e.Channel, "Trivia will stop after this question");
+                e.Respond("Trivia will stop after this question");
             }
         }
 
@@ -57,7 +57,7 @@ namespace DiscordBot.Commands
                 Text += ":eyeglasses:";
             }
 
-            Bot.Send(e.Channel, Text);
+            e.Respond(Text);
         }
     }
 }

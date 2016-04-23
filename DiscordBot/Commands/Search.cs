@@ -26,7 +26,7 @@ namespace DiscordBot.Commands
                     Type = Ask["magic"]["type"].ToString();
                 }
 
-                Bot.Send(e.Channel, e.User.Mention + " " + Ask["magic"]["answer"].ToString());
+                e.Respond(e.User.Mention + " " + Ask["magic"]["answer"].ToString());
             }
             catch (Exception Ex)
             {
@@ -41,7 +41,7 @@ namespace DiscordBot.Commands
                 string Url = YoutubeResult((string)s);
                 if (Url != string.Empty)
                 {
-                    Bot.Send(e.Channel, "I think I found it.. " + Url);
+                    e.Respond("I think I found it.. " + Url);
                     return;
                 }
             }
@@ -50,7 +50,7 @@ namespace DiscordBot.Commands
                 $"YtSearch {Ex}".Log();
             }
 
-            Bot.Send(e.Channel, e.User.Mention + " " + Conversation.CantFind);
+            e.Respond(e.User.Mention + " " + Conversation.CantFind);
         }
 
         public static void Image(object s, MessageEventArgs e)
@@ -59,24 +59,24 @@ namespace DiscordBot.Commands
             {
                 string Req = "https://www.googleapis.com/customsearch/v1?q=" + Uri.EscapeDataString((string)s) + "&cx=018084019232060951019%3Ahs5piey28-e&num=1&searchType=image&start=" + new Random().Next(1, 15) + "&fields=items%2Flink&key=" + Bot.GoogleAPI;
                 JObject obj = JObject.Parse(Req.WebResponse());
-                Bot.Send(e.Channel, obj["items"][0]["link"].ToString());
+                e.Respond(obj["items"][0]["link"].ToString());
             }
             catch
             {
-                Bot.Send(e.Channel, e.User.Mention + " " + Conversation.CantFind);
+                e.Respond(e.User.Mention + " " + Conversation.CantFind);
             }
         }
 
         public static void Osu(object s, MessageEventArgs e)
         {
-            using (System.Net.WebClient cl = new System.Net.WebClient())
+            using (var cl = new WebClient())
             {
                 cl.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
-                cl.Headers.Add(System.Net.HttpRequestHeader.UserAgent, "Mozilla/5.0 (Windows NT 6.2; Win64; x64)");
+                cl.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/5.0 (Windows NT 6.2; Win64; x64)");
                 cl.DownloadDataAsync(new Uri("http://lemmmy.pw/osusig/sig.php?uname=" + (string)s + "&flagshadow&xpbar&xpbarhex&pp=2"));
                 cl.DownloadDataCompleted += (sender, cle) => {
                     Bot.Send(e.Channel, (string)s + ".png", new MemoryStream(cle.Result));
-                    Bot.Send(e.Channel, "Profile Link: https://osu.ppy.sh/u/" + Uri.EscapeDataString((string)s));
+                    e.Respond("Profile Link: https://osu.ppy.sh/u/" + Uri.EscapeDataString((string)s));
                 };
             }
         }
@@ -85,7 +85,7 @@ namespace DiscordBot.Commands
         {
             if (e.Message.MentionedUsers.Count() > 0)
             {
-                Bot.Send(e.Channel, e.Message.MentionedUsers.First().AvatarUrl);
+                e.Respond(e.Message.MentionedUsers.First().AvatarUrl);
             }
         }
 
@@ -115,12 +115,12 @@ namespace DiscordBot.Commands
                     WebHeaderCollection Headers = new WebHeaderCollection();
                     Headers.Add("X-Mashape-Key", Bot.MashapeAPI);
                     JObject Json = JObject.Parse($"https://mashape-community-urban-dictionary.p.mashape.com/define?term={Uri.EscapeUriString(Query)}".WebResponse(Headers));
-                    Bot.Send(e.Channel, Json["list"][0]["definition"].ToString());
+                    e.Respond(Json["list"][0]["definition"].ToString());
                 }
             }
             catch
             {
-                Bot.Send(e.Channel, "I have no idea");
+                e.Respond("I have no idea");
             }
         }
 
@@ -154,13 +154,13 @@ namespace DiscordBot.Commands
                     Extra = Info["total_episodes"] + " Episodes (" + Info["airing_status"] + ") - Scored " + Info["average_score"] + "\n";
                 }
 
-                Bot.Send(e.Channel, Title + "\n" + Extra +
+                e.Respond(Title + "\n" + Extra +
                     "Synopsis: " + WebUtility.HtmlDecode(Info["description"].ToString()).Replace("<br>", "\n").Compact(250) + "\n" +
                     "More info at http://anilist.co/anime/" + Info["id"] + "\n" + Info["image_url_lge"]);
             }
             else
             {
-                Bot.Send(e.Channel, e.User.Mention + " " + Conversation.CantFind);
+                e.Respond(e.User.Mention + " " + Conversation.CantFind);
             }
         }
 
@@ -192,13 +192,13 @@ namespace DiscordBot.Commands
                     Extra = Info["total_chapters"] + " Chapters (" + Info["publishing_status"] + ") - Scored " + Info["average_score"] + "\n";
                 }
 
-                Bot.Send(e.Channel, Title + "\n" + Extra +
+                e.Respond(Title + "\n" + Extra +
                     "Synopsis: " + WebUtility.HtmlDecode(Info["description"].ToString()).Replace("<br>", "\n").Compact(250) + "\n" +
                     "More info at http://anilist.co/manga/" + Info["id"] + "\n" + Info["image_url_lge"]);
             }
             else
             {
-                Bot.Send(e.Channel, e.User.Mention + " " + Conversation.CantFind);
+                e.Respond(e.User.Mention + " " + Conversation.CantFind);
             }
         }
 

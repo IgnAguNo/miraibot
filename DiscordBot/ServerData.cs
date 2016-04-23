@@ -94,13 +94,20 @@ namespace DiscordBot
             return ChannelCommands;
         }
 
+        public void StopHandlers()
+        {
+            Music.Stop();
+            foreach (var Triviahandler in Trivia.Values)
+            {
+                Triviahandler.Stop();
+            }
+        }
+
         ~ServerData()
         {
             Music = null;
-            foreach (KeyValuePair<ulong, TriviaHandler> KVP in Trivia)
-            {
-                KVP.Value.Stop();
-            }
+            Trivia.Clear();
+            Trivia = null;
         }
     }
 }
