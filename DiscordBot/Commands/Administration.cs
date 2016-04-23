@@ -91,16 +91,23 @@ namespace DiscordBot.Commands
 
         public static async void SetAvatar(object s, MessageEventArgs e)
         {
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(Uri.EscapeUriString((string)s));
-            webRequest.Timeout = 5000;
-            WebResponse webResponse = await webRequest.GetResponseAsync();
+            try
+            {
+                HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(Uri.EscapeUriString((string)s));
+                webRequest.Timeout = 5000;
+                WebResponse webResponse = await webRequest.GetResponseAsync();
 
-            Image image = Image.FromStream(webResponse.GetResponseStream());
-            MemoryStream stream = new MemoryStream();
-            image.Save(stream, ImageFormat.Png);
-            stream.Position = 0;
+                Image image = Image.FromStream(webResponse.GetResponseStream());
+                MemoryStream stream = new MemoryStream();
+                image.Save(stream, ImageFormat.Png);
+                stream.Position = 0;
 
-            await Bot.Client.CurrentUser.Edit(Bot.Password, avatar: stream);
+                await Bot.Client.CurrentUser.Edit(Bot.Password, avatar: stream);
+            }
+            catch
+            {
+                e.Respond("Oops.. I couldn't use that file");
+            }
         }
 
         public static async void Prune(object s, MessageEventArgs e)
