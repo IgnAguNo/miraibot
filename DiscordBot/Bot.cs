@@ -101,6 +101,28 @@ namespace DiscordBot
             {
                 await Client.Connect(Mail, Password);
 
+                if (Client.Servers.Count() == 0)
+                {
+                    string S;
+
+                    while (true)
+                    {
+                        try
+                        {
+                            Console.WriteLine("First invite link: ");
+                            S = Console.ReadLine().Trim();
+
+                            var Invite = await Client.GetInvite(S);
+                            await Invite.Accept();
+                            break;
+                        }
+                        catch
+                        {
+
+                        }
+                    }
+                }
+
                 int ChannelCount = 0;
                 foreach (Server Server in Client.Servers)
                 {
