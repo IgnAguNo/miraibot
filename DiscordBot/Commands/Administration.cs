@@ -84,9 +84,9 @@ namespace DiscordBot.Commands
             Bot.Shutdown();
         }
 
-        public static /*async*/ void SetName(object s, MessageEventArgs e)
+        public static async void SetName(object s, MessageEventArgs e)
         {
-            //await Bot.Client.CurrentUser.Edit(Bot.AppId, (string)s);
+            await Bot.Client.CurrentUser.Edit(Bot.Token, username: (string)s);
         }
 
         public static async void SetAvatar(object s, MessageEventArgs e)
@@ -102,7 +102,7 @@ namespace DiscordBot.Commands
                 image.Save(stream, ImageFormat.Png);
                 stream.Position = 0;
 
-                //await Bot.Client.CurrentUser.Edit(Bot.AppId, avatar: stream);
+                await Bot.Client.CurrentUser.Edit(Bot.Token, avatar: stream);
             }
             catch
             {

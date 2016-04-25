@@ -126,7 +126,7 @@ namespace DiscordBot
             OptionalAddServer(e.Server);
         }
 
-        public static void ServerAvailable(object sender, ServerEventArgs e)
+        public static void ServerAvailable(object s, ServerEventArgs e)
         {
             OptionalAddServer(e.Server);
         }
