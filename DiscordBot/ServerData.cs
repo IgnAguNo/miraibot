@@ -96,11 +96,15 @@ namespace DiscordBot
 
         public void StopHandlers()
         {
-            Music.Stop();
-            foreach (var Triviahandler in Trivia.Values)
+            try
             {
-                Triviahandler.Stop();
+                Music.Stop();
+                foreach (var Triviahandler in Trivia.Values)
+                {
+                    Triviahandler.Stop();
+                }
             }
+            catch { }
         }
 
         ~ServerData()

@@ -3,6 +3,7 @@ using Discord.Audio;
 using DiscordBot.Commands;
 using DiscordBot.Handlers;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -29,11 +30,22 @@ namespace DiscordBot
         public const string CredentialsFile = "data.credentials.txt";
         public const string TelegramFile = "data.telegram.txt";
 
-        public static string Mail;
-        public static string Password;
+        public static string Token;
+        public static ulong AppId = 0;
+        public static string InviteLink
+        {
+            get
+            {
+                if (AppId == 0)
+                {
+                    return "No invite link found";
+                }
+
+                return $"https://discordapp.com/oauth2/authorize?&client_id={AppId}&scope=bot";
+            }
+        }
         public static ulong Owner; //Amir 74779725393825792
-        public static User OwnerAccount = null;
-        public static string DbDir = "./";
+        public static string MainDir = "./";
         public const string GoogleAPI = "AIzaSyAVrXiAHfLEbQbNJP80zbTuW2jL0wuEigQ";
         public const string SoundCloudAPI = "5c28ed4e5aef8098723bcd665d09041d";
         public const string MashapeAPI = "2OuTDTmiT6mshgokCwR10VwkNI40p125gP1jsnofSaiWBJFcUf";
@@ -42,6 +54,15 @@ namespace DiscordBot
         
         static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                var StartInfo = Process.GetCurrentProcess().StartInfo;
+                StartInfo.FileName = Process.GetCurrentProcess().MainModule.FileName;
+                Process.Start(StartInfo);
+
+                Shutdown();
+            };
+
             int Width = 93;
             int Height = 23;
 
@@ -68,9 +89,12 @@ namespace DiscordBot
             }
 
             string[] Credentials = File.ReadAllText(CredentialsFile).Replace("\r", string.Empty).Split('\n');
-            Mail = Credentials[0];
-            Password = Credentials[1];
-            
+            Token = Credentials[0];
+            if (ulong.TryParse(Credentials[1], out AppId))
+            {
+                InviteLink.Log();
+            }
+
             if (Credentials.Length <= 2 || !ulong.TryParse(Credentials[2], out Owner))
             {
                 "Couldn't load owner id from credentials".Log();
@@ -78,7 +102,7 @@ namespace DiscordBot
 
             if (Credentials.Length > 3)
             {
-                DbDir = Credentials[3];
+                MainDir = Credentials[3];
             }
 
             Client = new DiscordClient();
@@ -88,108 +112,77 @@ namespace DiscordBot
                 EnableEncryption = false,
                 EnableMultiserver = true,
                 Bitrate = AudioServiceConfig.MaxBitrate,
-                //BufferLength = 50,
-                //BufferLength = 500,
                 BufferLength = 1000,
                 Mode = AudioMode.Outgoing
             }));
 
             MusicHandler.Buffers = new ByteBuffer(1920 * 2, (int)Math.Pow(2, 16));
-            "Discord Audio Client Service Loaded".Log();
 
-            Client.ExecuteAndWait(async () =>
+            for (int i = 0; i < 3; i++)
             {
-                await Client.Connect(Mail, Password);
-
-                if (Client.Servers.Count() == 0)
+                try
                 {
-                    string S;
-
-                    while (true)
+                    Client.ExecuteAndWait(async () =>
                     {
-                        try
+                        await Client.Connect(Token);
+
+                        InitCommands();
+
+                        Client.Log.Message += ClientEvents.LogMessage;
+                        Client.MessageReceived += ClientEvents.MessageReceived;
+
+                        Client.UserJoined += ClientEvents.UserJoined;
+                        Client.UserLeft += ClientEvents.UserLeft;
+
+                        Client.JoinedServer += ClientEvents.JoinedServer;
+                        Client.ServerAvailable += ClientEvents.ServerAvailable;
+                        Client.LeftServer += ClientEvents.LeftServer;
+
+                        ulong RefreshCount = 0;
+                        Timer Updater = new Timer(1000);
+                        Updater.Elapsed += (s, e) =>
                         {
-                            Console.WriteLine("First invite link: ");
-                            S = Console.ReadLine().Trim();
+                            try
+                            {
+                                Console.Title = $"[@{Client.CurrentUser.Name}] {CommandParser.Executed} Commands - {Msgs} Messages Sent - {Spam} Blocked";
 
-                            var Invite = await Client.GetInvite(S);
-                            await Invite.Accept();
-                            break;
-                        }
-                        catch
+                                if (TelegramIntegration.Me != null)
+                                {
+                                    Console.Title += $" - {TelegramIntegration.Msgs} Telegram Messages";
+                                }
+
+                                Console.Title += $" - {(DateTime.Now - Start).ToString("%d")} days, {(DateTime.Now - Start).ToString(@"%h\:mm\:ss")}";
+
+                                if (RefreshCount++ % 15 == 0)
+                                {
+                                    int Playing = ServerData.Servers.Count(x => x.Value.Music.Playing);
+                                    Client.SetGame("music in " + Playing + " server" + (Playing == 1 ? "" : "s"));
+                                }
+                            }
+                            catch (Exception Ex)
+                            {
+                                $"IntervalUpdateException: {Ex}".Log();
+                            }
+                        };
+                        Updater.AutoReset = true;
+                        Updater.Start();
+
+                        if (File.Exists(TelegramFile))
                         {
-
+                            await TelegramIntegration.Start(File.ReadAllText(TelegramFile).Trim());
+                            $"Logged into Telegram as {TelegramIntegration.Me.Username}".Log();
                         }
-                    }
+
+                        handler = new ConsoleEventDelegate(ConsoleEventCallback);
+                        SetConsoleCtrlHandler(handler, true);
+
+                        "Booted! Waiting for input".Log();
+                    });
+
+                    break;
                 }
-
-                int ChannelCount = 0;
-                foreach (Server Server in Client.Servers)
-                {
-                    /*foreach (User User in Server.Users)
-                    {
-                        Db.ForceAddAccount(User.Id);
-                    }*/
-
-                    ServerData.Servers.Add(Server.Id, new ServerData(Server));
-                    ChannelCount += Server.TextChannels.Count();
-                    
-                    if (OwnerAccount == null)
-                    {
-                        OwnerAccount = Server.GetUser(Owner);
-                    }
-                }
-
-                if (OwnerAccount != null)
-                {
-                    $"Set {OwnerAccount.Name} as owner".Log();
-                }
-
-                $"Joined {ChannelCount} channels in {Client.Servers.Count()} servers".Log();
-
-                InitCommands();
-
-                Client.Log.Message += ClientEvents.LogMessage;
-                Client.MessageReceived += ClientEvents.MessageReceived;
-                Client.UserJoined += ClientEvents.UserJoined;
-                Client.UserLeft += ClientEvents.UserLeft;
-                Client.JoinedServer += ClientEvents.JoinedServer;
-
-                Timer Updater = new Timer(1000);
-                Updater.Elapsed += (s, e) =>
-                {
-                    try
-                    {
-                        //Console.SetWindowSize(Width, Height);
-                        Console.Title = $"[@{Client.CurrentUser.Name}] {CommandParser.Executed} Command Executed - {Msgs} Messages Sent - {Spam} Spam Blocked - {TelegramIntegration.Msgs} TG MSGs - Running {(DateTime.Now - Start).ToString("%d")} days, {(DateTime.Now - Start).ToString(@"%h\:mm\:ss")}";
-                        int Playing = ServerData.Servers.Count(x => x.Value.Music.Playing);
-                        Client.SetGame("music in " + Playing + " server" + (Playing == 1 ? "" : "s"));
-                    }
-                    catch (Exception Ex)
-                    {
-                        $"IntervalUpdateException: {Ex}".Log();
-                    }
-                };
-                Updater.AutoReset = true;
-                Updater.Start();
-
-                if (File.Exists(TelegramFile))
-                {
-                    await TelegramIntegration.Start(File.ReadAllText(TelegramFile).Trim());
-                    $"Logged into Telegram as {TelegramIntegration.Me.Username}".Log();
-                }
-
-                AppDomain.CurrentDomain.UnhandledException += (s, e) =>
-                {
-                    Shutdown();
-                    "Crashed due to an uncaught exception, saved data for next boot".Log();
-                };
-
-                handler = new ConsoleEventDelegate(ConsoleEventCallback);
-                SetConsoleCtrlHandler(handler, true);
-
-                "Booted! Waiting for input".Log();
-            });
+                catch (Discord.Net.WebSocketException) { }
+            }
         }
 
         public static void Send(Channel Channel, string Message, Stream Stream = null, bool SpamProtection = true)
@@ -249,16 +242,27 @@ namespace DiscordBot
 
         public static void Shutdown()
         {
-            "Disconnecting..".Log();
-
-            foreach (ServerData SD in ServerData.Servers.Values)
+            if (Client != null)
             {
-                $"{SD.Music.Save(SD.Server)} songs saved in {SD.Name}".Log();
-                SD.StopHandlers();
-            }
+                try
+                {
+                    "Disconnecting..".Log();
 
-            Task.Delay(350).Wait();
-            Client.Disconnect().Wait();
+                    foreach (ServerData SD in ServerData.Servers.Values)
+                    {
+                        $"{SD.Music.Save(SD.Server)} songs saved in {SD.Name}".Log();
+                        SD.StopHandlers();
+                    }
+
+                    //Task.Delay(350).Wait();
+                    Client.Disconnect().Wait();
+                }
+                catch { }
+                finally
+                {
+                    Client = null;
+                }
+            }
         }
 
         private static void InitCommands()
@@ -278,7 +282,7 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, "setavatar", "Changes my avatar", Administration.SetAvatar),
                 new Command(Command.PrefixType.Command, "prune", "Removes some message history", Administration.Prune),
                 new Command(Command.PrefixType.Command, "fix", "Clears the message queue", Administration.Fix),
-                new Command(Command.PrefixType.Command, "joinserver", "Joins a server through an invite link", Administration.JoinServer),
+                new Command(Command.PrefixType.Command, "joinserver", "Sends the invite link to add me", Administration.JoinServer),
                 new Command(Command.PrefixType.Command, "leaveserver", "Leaves this server, add my mention to confirm", Administration.LeaveServer)
             });
 

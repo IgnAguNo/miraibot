@@ -38,24 +38,31 @@ namespace DiscordBot
                     Ex.Log();
                 }
             }
+#if DEBUG
             else
             {
                 e.Message.Log();
             }
+#endif
         }
 
         public static async void MessageReceived(object s, MessageEventArgs e)
         {
-            if (!e.Message.IsAuthor)
+            try
             {
-                if (e.Message.Channel.IsPrivate)
+                if (!e.Message.IsAuthor)
                 {
-                    if (Bot.OwnerAccount != null)
+                    if (e.Message.Channel.IsPrivate)
                     {
+                        if (e.Message.RawText.StartsWith("#"))
+                        {
+                            await e.Message.User.SendMessage(Bot.InviteLink);
+                        }
+                        
                         string sUserId = e.Message.Text.Split(' ')[0];
                         ulong UserId;
 
-                        if (Bot.OwnerAccount.Id == e.User.Id)
+                        if (Bot.Owner == e.User.Id)
                         {
                             if (ulong.TryParse(sUserId, out UserId))
                             {
@@ -63,23 +70,26 @@ namespace DiscordBot
                                 await PM.SendMessage(e.Message.Text.Substring(sUserId.Length).Trim());
                                 await PM.Delete();
                             }
-                            else
-                            {
-                                Administration.JoinServer(e.Message.Text, e);
-                            }
                         }
                         else
                         {
-                            await Bot.OwnerAccount.SendMessage($"[{e.User.Id}] {e.User.Name} sent: `{e.Message.Text.Replace("`", "")}`");
+                            Channel PM = await Bot.Client.CreatePrivateChannel(Bot.Owner);
+                            await PM.SendMessage($"[{e.User.Id}] {e.User.Name} sent: `{e.Message.Text.Replace("`", "")}`");
+                            await PM.Delete();
                         }
-                    }
 
-                    await e.Message.Channel.Delete();
+                        await e.Message.Channel.Delete();
+                    }
+                    else
+                    {
+                        //OptionalAddServer(e.Server);
+                        CommandParser.Handle(e);
+                    }
                 }
-                else
-                {
-                    CommandParser.Handle(e);
-                }
+            }
+            catch (Exception Ex)
+            {
+                Ex.Log();
             }
         }
 
@@ -89,6 +99,8 @@ namespace DiscordBot
 
             if (e.User.Id != Bot.Client.CurrentUser.Id)
             {
+                OptionalAddServer(e.Server);
+
                 foreach (Channel Channel in ServerData.Servers[e.Server.Id].ChannelsWithCategory(typeof(Conversation).Name))
                 {
                     Bot.Send(Channel, "Hi " + e.User.Mention + "! Welcome to the server :)", null, false);
@@ -100,6 +112,8 @@ namespace DiscordBot
         {
             if (e.User.Id != Bot.Client.CurrentUser.Id)
             {
+                OptionalAddServer(e.Server);
+
                 foreach (Channel Channel in ServerData.Servers[e.Server.Id].ChannelsWithCategory(typeof(Conversation).Name))
                 {
                     Bot.Send(Channel, "I hope I'll see you again soon, " + e.User.Name + "!", null, false);
@@ -109,10 +123,30 @@ namespace DiscordBot
 
         public static void JoinedServer(object s, ServerEventArgs e)
         {
-            if (!ServerData.Servers.ContainsKey(e.Server.Id))
+            OptionalAddServer(e.Server);
+        }
+
+        public static void ServerAvailable(object sender, ServerEventArgs e)
+        {
+            OptionalAddServer(e.Server);
+        }
+
+        public static void LeftServer(object s, ServerEventArgs e)
+        {
+            if (ServerData.Servers.ContainsKey(e.Server.Id))
             {
-                ServerData.Servers.Add(e.Server.Id, new ServerData(e.Server));
-                $"Joined server {e.Server.Name}".Log();
+                ServerData.Servers[e.Server.Id].StopHandlers();
+                ServerData.Servers.Remove(e.Server.Id);
+                $"Left Server {e.Server.Name}".Log();
+            }
+        }
+
+        private static void OptionalAddServer(Server Server)
+        {
+            if (!ServerData.Servers.ContainsKey(Server.Id))
+            {
+                ServerData.Servers.Add(Server.Id, new ServerData(Server));
+                $"Joined server {Server.Name}".Log();
             }
         }
     }

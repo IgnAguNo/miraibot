@@ -461,7 +461,7 @@ namespace DiscordBot.Handlers
                 Data = SongQueue.ToArray();
             }
 
-            using (BinaryWriter Writer = new BinaryWriter(File.Open(Bot.DbDir + "data.playlist." + Identifier + ".txt", FileMode.Create)))
+            using (BinaryWriter Writer = new BinaryWriter(File.Open(Bot.MainDir + "data.playlist." + Identifier + ".txt", FileMode.Create)))
             {
                 Writer.Write(Data.Length);
                 for (int i = 0; i < Data.Length; i++)
@@ -487,7 +487,7 @@ namespace DiscordBot.Handlers
                 M = await SendAsync(C, "Adding..");
             }
 
-            string DataFile = Bot.DbDir + "data.playlist." + Identifier + ".txt";
+            string DataFile = Bot.MainDir + "data.playlist." + Identifier + ".txt";
             if (!File.Exists(DataFile))
             {
                 await EditAsync(M, "Can't find " + DataFile);

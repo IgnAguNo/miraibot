@@ -84,9 +84,9 @@ namespace DiscordBot.Commands
             Bot.Shutdown();
         }
 
-        public static async void SetName(object s, MessageEventArgs e)
+        public static /*async*/ void SetName(object s, MessageEventArgs e)
         {
-            await Bot.Client.CurrentUser.Edit(Bot.Password, (string)s);
+            //await Bot.Client.CurrentUser.Edit(Bot.AppId, (string)s);
         }
 
         public static async void SetAvatar(object s, MessageEventArgs e)
@@ -102,7 +102,7 @@ namespace DiscordBot.Commands
                 image.Save(stream, ImageFormat.Png);
                 stream.Position = 0;
 
-                await Bot.Client.CurrentUser.Edit(Bot.Password, avatar: stream);
+                //await Bot.Client.CurrentUser.Edit(Bot.AppId, avatar: stream);
             }
             catch
             {
@@ -173,9 +173,9 @@ namespace DiscordBot.Commands
             GC.Collect();
         }
 
-        public static async void JoinServer(object s, MessageEventArgs e)
+        public static /*async*/ void JoinServer(object s, MessageEventArgs e)
         {
-            var Invite = await Bot.Client.GetInvite((string)s);
+            /*var Invite = await Bot.Client.GetInvite((string)s);
             if (Invite != null && !Invite.IsRevoked)
             {
                 await Invite.Accept();
@@ -185,6 +185,8 @@ namespace DiscordBot.Commands
             {
                 e.Respond("Could not join that server");
             }*/
+
+            e.Respond(Bot.InviteLink);
         }
         
         public static async void LeaveServer(object s, MessageEventArgs e)

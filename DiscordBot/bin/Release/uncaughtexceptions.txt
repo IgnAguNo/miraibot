@@ -1,0 +1,10 @@
+System.Exception: Er is een uitzondering opgetreden van het type System.Exception.
+   bij DiscordBot.CommandParser.<Help>d__5.MoveNext() in C:\Users\Amir\Documents\Visual Studio 2015\Projects\DiscordBot\DiscordBot\CommandParser.cs:regel 108
+--- Einde van stacktracering vanaf vorige locatie waar uitzondering is opgetreden ---
+   bij System.Runtime.CompilerServices.AsyncMethodBuilderCore.<>c.<ThrowAsync>b__6_1(Object state)
+   bij System.Threading.QueueUserWorkItemCallback.WaitCallback_Context(Object state)
+   bij System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state, Boolean preserveSyncCtx)
+   bij System.Threading.ExecutionContext.Run(ExecutionContext executionContext, ContextCallback callback, Object state, Boolean preserveSyncCtx)
+   bij System.Threading.QueueUserWorkItemCallback.System.Threading.IThreadPoolWorkItem.ExecuteWorkItem()
+   bij System.Threading.ThreadPoolWorkQueue.Dispatch()
+   bij System.Threading._ThreadPoolWaitCallback.PerformWaitCallback()
