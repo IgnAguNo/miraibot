@@ -2,9 +2,7 @@ c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\De
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\DiscordBot.exe
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\DiscordBot.pdb
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Discord.Net.Audio.dll
-c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Discord.Net.Commands.dll
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Discord.Net.dll
-c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Discord.Net.Modules.dll
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Nito.AsyncEx.dll
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Newtonsoft.Json.dll
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\WebSocket4Net.dll
@@ -18,8 +16,6 @@ c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\obj\De
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Nito.AsyncEx.Concurrent.dll
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Discord.Net.xml
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Discord.Net.Audio.xml
-c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Discord.Net.Commands.xml
-c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Discord.Net.Modules.xml
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Nito.AsyncEx.xml
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Nito.AsyncEx.Concurrent.xml
 c:\users\amir\documents\visual studio 2015\Projects\DiscordBot\DiscordBot\bin\Debug\Nito.AsyncEx.Enlightenment.xml

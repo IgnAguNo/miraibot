@@ -1,5 +1,7 @@
 ﻿using Discord;
+using Microsoft.CSharp;
 using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -173,19 +175,51 @@ namespace DiscordBot.Commands
             GC.Collect();
         }
 
-        public static /*async*/ void JoinServer(object s, MessageEventArgs e)
+        public static void Eval(object s, MessageEventArgs e)
         {
-            /*var Invite = await Bot.Client.GetInvite((string)s);
-            if (Invite != null && !Invite.IsRevoked)
-            {
-                await Invite.Accept();
-                //e.Respond("Joined server");
-            }
-            /*else
-            {
-                e.Respond("Could not join that server");
-            }*/
+            var Parameters = new CompilerParameters();
 
+            Parameters.ReferencedAssemblies.Add("system.dll");
+            Parameters.ReferencedAssemblies.Add("discord.net.dll");
+
+            Parameters.CompilerOptions = "/t:library";
+            Parameters.GenerateInMemory = true;
+
+            var Code = new StringBuilder();
+
+            Code.Append("using System;\n");
+            Code.Append("using Discord;\n");
+            Code.Append("namespace CS { \n");
+            Code.Append("public class Code { \n");
+            Code.Append("public object Eval(MessageEventArgs e) {\n");
+            Code.Append($"{(string)s}; \n");
+            Code.Append($"return null; \n");
+            Code.Append("} \n");
+            Code.Append("} \n");
+            Code.Append("}\n");
+
+            var Compiled = new CSharpCodeProvider().CompileAssemblyFromSource(Parameters, Code.ToString());
+            if (Compiled.Errors.Count > 0)
+            {
+                e.Respond($"Error ({Compiled.Errors[0].ErrorText}) evaluating {(string)s}");
+            }
+            else
+            {
+                object o = Compiled.CompiledAssembly.CreateInstance("CS.Code");
+                var Result = o.GetType().GetMethod("Eval").Invoke(o, new object[] { e }).ToString();
+                if (Result == null)
+                {
+                    e.Respond("There was no result");
+                }
+                else
+                {
+                    e.Respond(Result);
+                }
+            }
+        }
+
+        public static void JoinServer(object s, MessageEventArgs e)
+        {
             e.Respond(Bot.InviteLink);
         }
         

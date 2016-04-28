@@ -56,7 +56,6 @@ namespace DiscordBot.Commands
                 }
                 else if (Files.Length == 1)
                 {
-                    string Name = Files[0].Substring(SongData.MusicDir.Length);
                     ServerData.Servers[e.Server.Id].Music.Enqueue(Files[0], e.Channel, true);
                     ServerData.Servers[e.Server.Id].Music.OptionalConnectClient(e.User.VoiceChannel);
                 }

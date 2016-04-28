@@ -17,7 +17,7 @@ namespace DiscordBot
         private static uint Msgs = 0;
         private static uint Spam = 0;
 
-        public static DateTime Start = DateTime.Now;
+        public static DateTime Start;
         public static DiscordClient Client;
         public static string Mention
         {
@@ -54,22 +54,13 @@ namespace DiscordBot
         
         static void Main(string[] args)
         {
-            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
-            {
-                var StartInfo = Process.GetCurrentProcess().StartInfo;
-                StartInfo.FileName = Process.GetCurrentProcess().MainModule.FileName;
-                Process.Start(StartInfo);
-
-                Shutdown();
-            };
+            Console.Title = "Loading..";
 
             int Width = 93;
             int Height = 23;
 
             Console.SetWindowSize(Width, Height);
-            Console.SetBufferSize(Width, 1024);
-
-            Console.Title = "Loading..";
+            Console.SetBufferSize(Width, 512);
 
             Console.BackgroundColor = ConsoleColor.White;
             Console.ForegroundColor = ConsoleColor.Black;
@@ -106,7 +97,7 @@ namespace DiscordBot
             }
 
             Client = new DiscordClient();
-            Client.AddService(new AudioService(new AudioServiceConfigBuilder()
+            Client.UsingAudio(new AudioServiceConfigBuilder()
             {
                 Channels = 2,
                 EnableEncryption = false,
@@ -114,74 +105,77 @@ namespace DiscordBot
                 Bitrate = AudioServiceConfig.MaxBitrate,
                 BufferLength = 1000,
                 Mode = AudioMode.Outgoing
-            }));
+            }.Build());
 
             MusicHandler.Buffers = new ByteBuffer(1920 * 2, (int)Math.Pow(2, 16));
 
-            for (int i = 0; i < 3; i++)
+            new Func<Task>(async delegate
             {
-                try
+                await Client.Connect(Token);
+            }).UntilNoExceptionAsync<Discord.Net.WebSocketException>(3).Wait();
+            
+            InitCommands();
+
+            Client.Log.Message += ClientEvents.LogMessage;
+            Client.MessageReceived += ClientEvents.MessageReceived;
+
+            Client.UserJoined += ClientEvents.UserJoined;
+            Client.UserLeft += ClientEvents.UserLeft;
+
+            Client.JoinedServer += ClientEvents.JoinedServer;
+            Client.ServerAvailable += ClientEvents.ServerAvailable;
+            Client.LeftServer += ClientEvents.LeftServer;
+
+            Timer Updater = new Timer(1000);
+            Updater.Elapsed += UpdateTitle;
+            Updater.AutoReset = true;
+            Start = DateTime.Now;
+            Updater.Start();
+
+            handler = new ConsoleEventDelegate(ConsoleEventCallback);
+            SetConsoleCtrlHandler(handler, true);
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                var StartInfo = Process.GetCurrentProcess().StartInfo;
+                StartInfo.FileName = Process.GetCurrentProcess().MainModule.FileName;
+                Process.Start(StartInfo);
+
+                Shutdown();
+            };
+
+            "The Discord functions have successfully booted".Log();
+
+            if (File.Exists(TelegramFile))
+            {
+                TelegramIntegration.Start(File.ReadAllText(TelegramFile).Trim());
+            }
+
+            Client.Wait();
+        }
+
+        private static void UpdateTitle(object s, ElapsedEventArgs e)
+        {
+            try
+            {
+                Console.Title = $"[@{Client.CurrentUser.Name}] {CommandParser.Executed} Commands - {Msgs} Messages Sent - {Spam} Blocked";
+
+                if (TelegramIntegration.Me != null)
                 {
-                    Client.ExecuteAndWait(async () =>
-                    {
-                        await Client.Connect(Token);
-
-                        InitCommands();
-
-                        Client.Log.Message += ClientEvents.LogMessage;
-                        Client.MessageReceived += ClientEvents.MessageReceived;
-
-                        Client.UserJoined += ClientEvents.UserJoined;
-                        Client.UserLeft += ClientEvents.UserLeft;
-
-                        Client.JoinedServer += ClientEvents.JoinedServer;
-                        Client.ServerAvailable += ClientEvents.ServerAvailable;
-                        Client.LeftServer += ClientEvents.LeftServer;
-
-                        ulong RefreshCount = 0;
-                        Timer Updater = new Timer(1000);
-                        Updater.Elapsed += (s, e) =>
-                        {
-                            try
-                            {
-                                Console.Title = $"[@{Client.CurrentUser.Name}] {CommandParser.Executed} Commands - {Msgs} Messages Sent - {Spam} Blocked";
-
-                                if (TelegramIntegration.Me != null)
-                                {
-                                    Console.Title += $" - {TelegramIntegration.Msgs} Telegram Messages";
-                                }
-
-                                Console.Title += $" - {(DateTime.Now - Start).ToString("%d")} days, {(DateTime.Now - Start).ToString(@"%h\:mm\:ss")}";
-
-                                if (RefreshCount++ % 15 == 0)
-                                {
-                                    int Playing = ServerData.Servers.Count(x => x.Value.Music.Playing);
-                                    Client.SetGame("music in " + Playing + " server" + (Playing == 1 ? "" : "s"));
-                                }
-                            }
-                            catch (Exception Ex)
-                            {
-                                $"IntervalUpdateException: {Ex}".Log();
-                            }
-                        };
-                        Updater.AutoReset = true;
-                        Updater.Start();
-
-                        if (File.Exists(TelegramFile))
-                        {
-                            await TelegramIntegration.Start(File.ReadAllText(TelegramFile).Trim());
-                            $"Logged into Telegram as {TelegramIntegration.Me.Username}".Log();
-                        }
-
-                        handler = new ConsoleEventDelegate(ConsoleEventCallback);
-                        SetConsoleCtrlHandler(handler, true);
-
-                        "Booted! Waiting for input".Log();
-                    });
-
-                    break;
+                    Console.Title += $" - {TelegramIntegration.Msgs} Telegram Messages";
                 }
-                catch (Discord.Net.WebSocketException) { }
+
+                Console.Title += $" - {(DateTime.Now - Start).ToString("%d")} days, {(DateTime.Now - Start).ToString(@"%h\:mm\:ss")}";
+
+                if ((DateTime.Now - Start).TotalSeconds % 15 == 0)
+                {
+                    int Playing = ServerData.Servers.Count(x => x.Value.Music.Playing);
+                    Client.SetGame("music in " + Playing + " server" + (Playing == 1 ? "" : "s"));
+                }
+            }
+            catch (Exception Ex)
+            {
+                $"IntervalUpdateException: {Ex}".Log();
             }
         }
 
@@ -196,52 +190,46 @@ namespace DiscordBot
 
         public static async Task<Message> SendAsync(Channel Channel, string Message, Stream Stream = null, bool SpamProtection = true)
         {
-            for (int i = 0; i < 5; i++)
+            Message Result = null;
+            await new Func<Task>(async delegate
             {
-                try
+                if (Channel == null || Message == null || Message == string.Empty || !Channel.GetUser(Client.CurrentUser.Id).GetPermissions(Channel).SendMessages)
                 {
-                    if (Channel == null || Message == null || Message == string.Empty || !Channel.GetUser(Client.CurrentUser.Id).GetPermissions(Channel).SendMessages)
-                    {
-                        return null;
-                    }
-
-                    if (SpamProtection && Client.MessageQueue.Count > 3)
-                    {
-                        $"Spam: {Message.Compact()}".Log();
-                        Client.MessageQueue.Clear();
-                        Spam++;
-
-                        return null;
-                    }
-
-                    int Max = 2000;
-                    if (Message.Length > Max)
-                    {
-                        Message = Message.Substring(0, Max - 3) + "...";
-                    }
-
-                    Msgs++;
-                    if (Stream != null)
-                    {
-                        return await Channel.SendFile(Message, Stream);
-                    }
-                    else
-                    {
-                        return await Channel.SendMessage(Message);
-                    }
+                    return;
                 }
-                catch (Exception Ex)
+
+                if (SpamProtection && Client.MessageQueue.Count > 3)
                 {
-                    Client.Log.Log(LogSeverity.Error, Channel.Name, Message.Compact(), Ex);
-                    await Task.Delay(500);
+                    $"Spam: {Message.Compact()}".Log();
+                    Client.MessageQueue.Clear();
+                    Spam++;
+                    return;
                 }
-            }
 
-            return null;
+                int Max = 2000;
+                if (Message.Length > Max)
+                {
+                    Message = Message.Substring(0, Max - 3) + "...";
+                }
+
+                Msgs++;
+                if (Stream != null)
+                {
+                    Result = await Channel.SendFile(Message, Stream);
+                }
+                else
+                {
+                    Result = await Channel.SendMessage(Message);
+                }
+            }).UntilNoExceptionAsync(10);
+
+            return Result;
         }
 
         public static void Shutdown()
         {
+            TelegramIntegration.StopPoll();
+
             if (Client != null)
             {
                 try
@@ -282,6 +270,7 @@ namespace DiscordBot
                 new Command(Command.PrefixType.Command, "setavatar", "Changes my avatar", Administration.SetAvatar),
                 new Command(Command.PrefixType.Command, "prune", "Removes some message history", Administration.Prune),
                 new Command(Command.PrefixType.Command, "fix", "Clears the message queue", Administration.Fix),
+                new Command(Command.PrefixType.Command, "eval", "Runs a script", Administration.Eval),
                 new Command(Command.PrefixType.Command, "joinserver", "Sends the invite link to add me", Administration.JoinServer),
                 new Command(Command.PrefixType.Command, "leaveserver", "Leaves this server, add my mention to confirm", Administration.LeaveServer)
             });
@@ -393,6 +382,7 @@ namespace DiscordBot
             if (eventType == 2)
             {
                 "Caught close-button press, shutting down..".Log();
+
                 Shutdown();
                 return false;
             }

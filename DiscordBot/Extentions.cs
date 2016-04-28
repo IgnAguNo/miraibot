@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace DiscordBot
 {
@@ -169,6 +170,38 @@ namespace DiscordBot
         public static void Respond(this MessageEventArgs e, string Text)
         {
             Bot.Send(e.Channel, Text);
+        }
+
+        public static void UntilNoException(this Action Action, byte Max = byte.MaxValue)
+            => UntilNoException<Exception>(Action, Max);
+
+        public static void UntilNoException<ExceptionType>(this Action Action, byte Max = byte.MaxValue) where ExceptionType : Exception
+        {
+            for (byte i = 0; i < Max; i++)
+            {
+                try
+                {
+                    Action();
+                    break;
+                }
+                catch (ExceptionType) { }
+            }
+        }
+
+        public static async Task UntilNoExceptionAsync(this Func<Task> Action, byte Max = byte.MaxValue)
+            => await UntilNoExceptionAsync<Exception>(Action, Max);
+
+        public static async Task UntilNoExceptionAsync<ExceptionType>(this Func<Task> Action, byte Max = byte.MaxValue) where ExceptionType : Exception
+        {
+            for (byte i = 0; i < Max; i++)
+            {
+                try
+                {
+                    await Action();
+                    break;
+                }
+                catch (ExceptionType) { }
+            }
         }
     }
 }

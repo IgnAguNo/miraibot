@@ -3,6 +3,8 @@ using DiscordBot.Handlers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -17,11 +19,11 @@ namespace DiscordBot
         public static User Me;
         public static ConcurrentDictionary<int, string> UsernameIdCache = new ConcurrentDictionary<int, string>();
         public static List<int> Blocked = new List<int>();
-        private static Dictionary<string, EventHandler<MessageEventArgs>> Commands = new Dictionary<string, EventHandler<MessageEventArgs>>();
+        private static Dictionary<string, EventHandler<Message>> Commands = new Dictionary<string, EventHandler<Message>>();
         public static Discord.Channel NextPairChannel = null;
 
-        private static MusicHandler GetMusic(MessageEventArgs e)
-            => GetMusic(e.Message.Chat.Id);
+        private static MusicHandler GetMusic(Message e)
+            => GetMusic(e.Chat.Id);
 
         private static MusicHandler GetMusic(long TgChat)
         {
@@ -34,18 +36,18 @@ namespace DiscordBot
             return ServerData.Servers[Id].Music;
         }
 
-        public static async void Respond(MessageEventArgs e, string Text)
+        public static async void Respond(Message Msg, string Text)
         {
             try
             {
-                await Api.SendTextMessage(e.Message.Chat.Id, Text, replyToMessageId: e.Message.MessageId);
+                await Api.SendTextMessage(Msg.Chat.Id, Text, replyToMessageId: Msg.MessageId);
             }
             catch
             {
             }
         }
 
-        public static async Task Start(string ApiKey)
+        public static async void Start(string ApiKey)
         {
             Api = new Api(ApiKey);
             Me = await Api.GetMe();
@@ -55,10 +57,24 @@ namespace DiscordBot
                 MusicHandler Music = GetMusic(e);
                 if (Music != null)
                 {
-                    SongData Song = new SongData(s);
+                    var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains((string)s)).ToArray();
+                    SongData Song;
+                    if (Files.Length > 0)
+                    {
+                        Song = new SongData(Files[0], true);
+                        Music.DirectEnqueue(Song);
+                    }
+                    else
+                    {
+                        Song = new SongData(s);
+                        if (Song.Found)
+                        {
+                            Music.DirectEnqueue(Song);
+                        }
+                    }
+
                     if (Song.Found)
                     {
-                        Music.DirectEnqueue(Song);
                         Respond(e, "Added " + Song.FullName.Compact(100));
                     }
                     else
@@ -148,7 +164,7 @@ namespace DiscordBot
                         }
                         else
                         {
-                            await Api.SendChatAction(e.Message.Chat.Id, ChatAction.Typing);
+                            await Api.SendChatAction(e.Chat.Id, ChatAction.Typing);
 
                             var KeyboardMarkup = new ReplyKeyboardMarkup();
                             int Row = -1;
@@ -175,7 +191,7 @@ namespace DiscordBot
                             KeyboardMarkup.ResizeKeyboard = true;
                             KeyboardMarkup.Selective = true;
 
-                            await Api.SendTextMessage(e.Message.Chat.Id, Music.GetCurrentPlaylist() + "\nWhich song should I remove?", replyToMessageId: e.Message.MessageId, replyMarkup: KeyboardMarkup);
+                            await Api.SendTextMessage(e.Chat.Id, Music.GetCurrentPlaylist() + "\nWhich song should I remove?", replyToMessageId: e.MessageId, replyMarkup: KeyboardMarkup);
                         }
                     }
                 }
@@ -185,9 +201,9 @@ namespace DiscordBot
             {
                 if (NextPairChannel != null)
                 {
-                    Db.SetDiscordServerId(e.Message.Chat.Id, NextPairChannel.Server.Id);
+                    Db.SetDiscordServerId(e.Chat.Id, NextPairChannel.Server.Id);
                     Respond(e, "This chat has now been succesfully paired with " + NextPairChannel.Server.Name);
-                    Bot.Send(NextPairChannel, "This server has been paired with " + ((e.Message.Chat.Type == ChatType.Private) ? e.Message.Chat.Title + " by " : "") + e.Message.From.Username);
+                    Bot.Send(NextPairChannel, "This server has been paired with " + ((e.Chat.Type == ChatType.Private) ? e.Chat.Title + " by " : "") + e.From.Username);
 
                     NextPairChannel = null;
                 }
@@ -197,9 +213,9 @@ namespace DiscordBot
             {
                 try
                 {
-                    if (e.Message.Chat.Type == ChatType.Private || e.Message.Chat.Title.StartsWith("H"))
+                    if (e.Chat.Type == ChatType.Private || e.Chat.Title.StartsWith("H"))
                     {
-                        Respond(e, Lewd.GetRandomLewd(s, (e.Message.From.Username != "Akkey" && e.Message.Chat.Type != ChatType.Private)));
+                        Respond(e, Lewd.GetRandomLewd(s, (e.From.Username != "Akkey" && e.Chat.Type != ChatType.Private)));
                     }
                 }
                 catch (Exception Ex)
@@ -210,29 +226,49 @@ namespace DiscordBot
 
             //Api.ChosenInlineResultReceived += Api_ChosenInlineResultReceived;
             //Api.InlineQueryReceived += Api_InlineQueryReceived;
-            Api.MessageReceived += Api_MessageReceived;
+            //Api.MessageReceived += Api_MessageReceived;
             //Api.UpdateReceived += Api_UpdateReceived;
 
-            Api.StartReceiving();
+            //Api.StartReceiving();
+
+
+            $"Logged into Telegram as {TelegramIntegration.Me.Username}".Log();
+            int UpdateOffset = 0;
+
+            while (Api != null)
+            {
+                foreach (var Update in await Api.GetUpdates(UpdateOffset, int.MaxValue))
+                {
+                    //$"{Update.Type} {Update.Message?.Text}".Log();
+
+                    if (Update.Type == UpdateType.MessageUpdate)
+                    {
+                        Api_MessageReceived(null, Update.Message);
+                    }
+
+                    UpdateOffset = Update.Id + 1;
+                }
+            }
         }
 
-        private static void Api_ChosenInlineResultReceived(object sender, ChosenInlineResultEventArgs e)
+        /*private static void Api_ChosenInlineResultReceived(object sender, ChosenInlineResultEventArgs e)
         {
-            //$"ChosenInlineResult {e.ChosenInlineResult?.Query}".Log();
+            $"ChosenInlineResult {e.ChosenInlineResult?.Query}".Log();
         }
 
         private static void Api_InlineQueryReceived(object sender, InlineQueryEventArgs e)
         {
-            //$"Inline Query {e.InlineQuery?.Query}".Log();
-        }
+            $"Inline Query {e.InlineQuery?.Query}".Log();
+        }*/
 
-        private static void Api_MessageReceived(object sender, MessageEventArgs e)
+        //private static void Api_MessageReceived(object sender, MessageEventArgs e)
+        private static void Api_MessageReceived(object sender, Message Msg)
         {
             //$"Message {e.Message.From.Username}".Log();
             try
             {
                 Msgs++;
-                var User = e.Message.From;
+                var User = Msg.From;
 
                 string OldUsername;
                 if (!UsernameIdCache.TryGetValue(User.Id, out OldUsername) || (User.Username != OldUsername && !UsernameIdCache.TryUpdate(User.Id, User.Username, OldUsername)))
@@ -240,12 +276,12 @@ namespace DiscordBot
                     UsernameIdCache.TryAdd(User.Id, User.Username);
                 }
 
-                if (e.Message.Type == MessageType.TextMessage && !Blocked.Contains(User.Id))
+                if (Msg.Type == MessageType.TextMessage && !Blocked.Contains(User.Id))
                 {
-                    string Text = e.Message.Text;
+                    string Text = Msg.Text;
                     string Mention = "@" + Me.Username;
 
-                    foreach (KeyValuePair<string, EventHandler<MessageEventArgs>> KVP in Commands)
+                    foreach (KeyValuePair<string, EventHandler<Message>> KVP in Commands)
                     {
                         if (Text.StartsWith("/" + KVP.Key))
                         {
@@ -257,7 +293,7 @@ namespace DiscordBot
 
                             if (Substring == string.Empty || Substring.StartsWith(" "))
                             {
-                                KVP.Value(Substring.Trim(), e);
+                                KVP.Value(Substring.Trim(), Msg);
                                 return;
                             }
                         }
@@ -270,9 +306,22 @@ namespace DiscordBot
             }
         }
 
-        private static void Api_UpdateReceived(object sender, UpdateEventArgs e)
+        /*private static void Api_UpdateReceived(object sender, UpdateEventArgs e)
         {
-            //$"Update {e.Update.InlineQuery?.Query}".Log();
+            $"Update {e.Update.InlineQuery?.Query}".Log();
+        }*/
+
+        public static void StopPoll()
+        {
+            Api = null;
+            /*try
+            {
+                if (Api != null)
+                {
+                    //Api.StopReceiving();
+                }
+            }
+            catch { }*/
         }
     }
 }

@@ -175,23 +175,17 @@ namespace DiscordBot.Handlers
         public async Task ConnectClient(Channel VoiceChannel)
         {
             await DisconnectClient();
-
-            for (int i = 0; i < 10; i++)
+            await new Func<Task>(async delegate
             {
-                try
-                {
-                    AudioClient = await VoiceChannel.JoinAudio();
-                    break;
-                }
-                catch { }
-            }
+                AudioClient = await VoiceChannel.JoinAudio();
+            }).UntilNoExceptionAsync(10);
         }
 
-        public void OptionalConnectClient(Channel VoiceChannel)
+        public async void OptionalConnectClient(Channel VoiceChannel)
         {
             if (VoiceChannel != null && (AudioClient == null || AudioClient.State != ConnectionState.Connected))
             {
-                ConnectClient(VoiceChannel).Wait();
+                await ConnectClient(VoiceChannel);
             }
         }
 
