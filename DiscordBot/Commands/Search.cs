@@ -215,39 +215,23 @@ namespace DiscordBot.Commands
             return API;
         }
 
-        private static YouTubeService YT = new YouTubeService(new BaseClientService.Initializer()
+        public static YouTubeService YT = new YouTubeService(new BaseClientService.Initializer()
         {
             ApiKey = Bot.GoogleAPI
         });
-
-        //Made by owner of Nadekobot
+        
         public static string YoutubeResult(string Query)
         {
             try
             {
-                var listRequest = YT.Search.List("snippet");
-                listRequest.Q = Query;
-                listRequest.MaxResults = 1;
-                listRequest.Type = "video";
-                foreach (SearchResult result in listRequest.Execute().Items)
+                var ListRequest = YT.Search.List("snippet");
+                ListRequest.Q = Query;
+                ListRequest.MaxResults = 1;
+                ListRequest.Type = "video";
+                foreach (var Result in ListRequest.Execute().Items)
                 {
-                    return "http://www.youtube.com/watch?v=" + result.Id.VideoId;
+                    return "http://www.youtube.com/watch?v=" + Result.Id.VideoId;
                 }
-
-                /*
-                //maybe it is already a youtube url, in which case we will just extract the id and prepend it with youtube.com?v=
-                Match Match = new Regex("(?:youtu\\.be\\/|v=)(?<id>[\\da-zA-Z\\-_]*)").Match(Query);
-                if (Match.Length > 1)
-                {
-                    return "http://www.youtube.com?v=" + Match.Groups["id"].Value;
-                }
-
-                WebRequest wr = WebRequest.Create("https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=" + Uri.EscapeDataString(Query) + "&key=" + Bot.GoogleAPI);
-                StreamReader sr = new StreamReader((await wr.GetResponseAsync()).GetResponseStream());
-
-                JObject obj = JObject.Parse(await sr.ReadToEndAsync());
-                return "http://www.youtube.com/watch?v=" + obj["items"][0]["id"]["videoId"].ToString();
-                */
             }
             catch { }
 

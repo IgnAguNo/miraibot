@@ -1,5 +1,6 @@
 ﻿using DiscordBot.Commands;
 using DiscordBot.Handlers;
+using Google.Apis.YouTube.v3.Data;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -27,7 +28,7 @@ namespace DiscordBot
 
         private static MusicHandler GetMusic(long TgChat)
         {
-            ulong Id = Db.GetDiscordServerId(TgChat);
+            var Id = Db.GetDiscordServerId(TgChat);
             if (Id == 0 || !ServerData.Servers.ContainsKey(Id))
             {
                 return null;
@@ -36,11 +37,11 @@ namespace DiscordBot
             return ServerData.Servers[Id].Music;
         }
 
-        public static async void Respond(Message Msg, string Text)
+        public static async void Respond(Message Msg, string Text, bool DisablePreview = false)
         {
             try
             {
-                await Api.SendTextMessage(Msg.Chat.Id, Text, replyToMessageId: Msg.MessageId);
+                await Api.SendTextMessage(Msg.Chat.Id, Text.Replace('`', '"'), DisablePreview, Msg.MessageId);
             }
             catch
             {
@@ -52,41 +53,26 @@ namespace DiscordBot
             Api = new Api(ApiKey);
             Me = await Api.GetMe();
 
-            Commands.Add("add", (s, e) => 
+            Commands.Add("add", (s, e) =>
             {
-                MusicHandler Music = GetMusic(e);
+                var Music = GetMusic(e);
                 if (Music != null)
                 {
-                    var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains((string)s)).ToArray();
-                    SongData Song;
-                    if (Files.Length > 0)
+                    var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(((string)s).ToLower())).ToArray();
+                    if (Files.Length == 0)
                     {
-                        Song = new SongData(Files[0], true);
-                        Music.DirectEnqueue(Song);
+                        Respond(e, Music.Enqueue((string)s));
                     }
                     else
                     {
-                        Song = new SongData(s);
-                        if (Song.Found)
-                        {
-                            Music.DirectEnqueue(Song);
-                        }
-                    }
-
-                    if (Song.Found)
-                    {
-                        Respond(e, "Added " + Song.FullName.Compact(100));
-                    }
-                    else
-                    {
-                        Respond(e, "The song could not be found");
+                        Respond(e, Music.Enqueue(Files[0], true), true);
                     }
                 }
             });
 
             Commands.Add("song", (s, e) =>
             {
-                MusicHandler Music = GetMusic(e);
+                var Music = GetMusic(e);
                 if (Music != null)
                 {
                     string Song = Music.GetCurrentSongName();
@@ -103,7 +89,7 @@ namespace DiscordBot
 
             Commands.Add("queue", (s, e) =>
             {
-                MusicHandler Music = GetMusic(e);
+                var Music = GetMusic(e);
                 if (Music != null)
                 {
                     string Playlist = Music.GetCurrentPlaylist();
@@ -120,7 +106,7 @@ namespace DiscordBot
 
             Commands.Add("skip", (s, e) =>
             {
-                MusicHandler Music = GetMusic(e);
+                var Music = GetMusic(e);
                 if (Music != null)
                 {
                     if (Music.Playing)
@@ -146,10 +132,10 @@ namespace DiscordBot
 
             Commands.Add("remove", async (s, e) =>
             {
-                MusicHandler Music = GetMusic(e);
+                var Music = GetMusic(e);
                 if (Music != null)
                 {
-                    List<string> Removed = Music.Remove(s.ParseInts());
+                    var Removed = Music.Remove(s.ParseInts());
 
                     if (Removed.Count > 0)
                     {
@@ -224,50 +210,19 @@ namespace DiscordBot
                 }
             });
 
-            //Api.ChosenInlineResultReceived += Api_ChosenInlineResultReceived;
-            //Api.InlineQueryReceived += Api_InlineQueryReceived;
-            //Api.MessageReceived += Api_MessageReceived;
-            //Api.UpdateReceived += Api_UpdateReceived;
+            $"Logged into Telegram as {Me.Username}".Log();
 
-            //Api.StartReceiving();
-
-
-            $"Logged into Telegram as {TelegramIntegration.Me.Username}".Log();
-            int UpdateOffset = 0;
-
-            while (Api != null)
-            {
-                foreach (var Update in await Api.GetUpdates(UpdateOffset, int.MaxValue))
-                {
-                    //$"{Update.Type} {Update.Message?.Text}".Log();
-
-                    if (Update.Type == UpdateType.MessageUpdate)
-                    {
-                        Api_MessageReceived(null, Update.Message);
-                    }
-
-                    UpdateOffset = Update.Id + 1;
-                }
-            }
+            Api.MessageReceived += Api_MessageReceived;
+            Api.InlineQueryReceived += Api_InlineQueryReceived;
+            Api.StartReceiving();
         }
 
-        /*private static void Api_ChosenInlineResultReceived(object sender, ChosenInlineResultEventArgs e)
+        private static void Api_MessageReceived(object s, MessageEventArgs e)
         {
-            $"ChosenInlineResult {e.ChosenInlineResult?.Query}".Log();
-        }
-
-        private static void Api_InlineQueryReceived(object sender, InlineQueryEventArgs e)
-        {
-            $"Inline Query {e.InlineQuery?.Query}".Log();
-        }*/
-
-        //private static void Api_MessageReceived(object sender, MessageEventArgs e)
-        private static void Api_MessageReceived(object sender, Message Msg)
-        {
-            //$"Message {e.Message.From.Username}".Log();
             try
             {
                 Msgs++;
+                var Msg = e.Message;
                 var User = Msg.From;
 
                 string OldUsername;
@@ -281,7 +236,7 @@ namespace DiscordBot
                     string Text = Msg.Text;
                     string Mention = "@" + Me.Username;
 
-                    foreach (KeyValuePair<string, EventHandler<Message>> KVP in Commands)
+                    foreach (var KVP in Commands)
                     {
                         if (Text.StartsWith("/" + KVP.Key))
                         {
@@ -306,22 +261,65 @@ namespace DiscordBot
             }
         }
 
-        /*private static void Api_UpdateReceived(object sender, UpdateEventArgs e)
+        private static async void Api_InlineQueryReceived(object s, InlineQueryEventArgs e)
         {
-            $"Update {e.Update.InlineQuery?.Query}".Log();
-        }*/
+            try
+            {
+                var Results = new List<InlineQueryResult>();
+                var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(e.InlineQuery.Query)).ToArray();
+
+                int i = 1;
+                InlineQueryResultVideo Vid;
+
+                if (Files.Length <= 20)
+                {
+                    foreach (var Result in Files)
+                    {
+                        Vid = new InlineQueryResultVideo();
+                        Vid.Id = e.InlineQuery.Id + i++;
+                        Vid.Title = Result.Substring(SongData.MusicDir.Length);
+                        Vid.Title = Vid.Title.Substring(0, Vid.Title.Length - 4);
+                        Vid.Description = "Local Mp3 File";
+                        Vid.ThumbUrl = "https://github.com/google/material-design-icons/blob/master/av/2x_web/ic_play_arrow_black_48dp.png?raw=true";
+                        Vid.MimeType = "video/mp4";
+                        Vid.Url = "https://github.com/google/material-design-icons/blob/master/av/2x_web/ic_play_arrow_black_48dp.png?raw=true";
+                        Vid.MessageText = $"/add@{Me.Username} {Vid.Title}";
+                        Results.Add(Vid);
+                    }
+                }
+
+                var ListRequest = Search.YT.Search.List("snippet");
+                ListRequest.Q = e.InlineQuery.Query;
+                ListRequest.MaxResults = 5;
+                ListRequest.Type = "video";
+                foreach (var Result in ListRequest.Execute().Items)
+                {
+                    Vid = new InlineQueryResultVideo();
+                    Vid.Id = e.InlineQuery.Id + i++;
+                    Vid.Title = Result.Snippet.Title;
+                    Vid.Description = Result.Snippet.Description;
+                    Vid.ThumbUrl = Result.Snippet.Thumbnails.Maxres?.Url ?? Result.Snippet.Thumbnails.Default__?.Url ?? string.Empty;
+                    Vid.MimeType = "text/html";
+                    Vid.Url = $"http://www.youtube.com/watch?v={Result.Id.VideoId}";
+                    Vid.MessageText = $"/add@{Me.Username} http://www.youtube.com/watch?v={Result.Id.VideoId}";
+                    Results.Add(Vid);
+                }
+
+                await Api.AnswerInlineQuery(e.InlineQuery.Id, Results.ToArray(), 0);
+            }
+            catch (Exception Ex)
+            {
+                Ex.Log();
+            }
+        }
 
         public static void StopPoll()
         {
-            Api = null;
-            /*try
+            if (Api != null)
             {
-                if (Api != null)
-                {
-                    //Api.StopReceiving();
-                }
+                Api.StopReceiving();
+                Api = null;
             }
-            catch { }*/
         }
     }
 }

@@ -25,7 +25,7 @@ namespace DiscordBot.Handlers
         private bool StopRequested = false;
 
         public float Volume = 1.0f;
-        public bool ADHD = false;
+        private bool Adhd = false;
 
         public bool Playing
         {
@@ -124,7 +124,7 @@ namespace DiscordBot.Handlers
                             if (CurrentSong.QueuedBuffers.Count > 0)
                             {
                                 //Speedtest
-                                if (ADHD && CurrentSong.QueuedBuffers.Count > 1)
+                                if (Adhd && CurrentSong.QueuedBuffers.Count > 1)
                                 {
                                     CurrentSong.QueuedBuffers.Dequeue();
                                     CurrentSong.Waiter.Release(1);
@@ -214,119 +214,109 @@ namespace DiscordBot.Handlers
             }
         }
 
-        public void Enqueue(string Query, Channel Channel, bool Local = false)
+        public string Enqueue(string Query, bool Local = false)
         {
             if (SongQueue.Count < MaxQueued)
             {
-                SongData Song = new SongData(Query, Local);
+                var Song = new SongData(Query, Local);
                 if (Song.Found)
                 {
                     SongQueue.Enqueue(Song);
-                    Send(Channel, "Added `" + Song.Name + "` at #" + SongQueue.Count);
+                    return $"Added `{Song.Name}` at #{SongQueue.Count}";
                 }
                 else
                 {
-                    Send(Channel, Conversation.CantFind);
+                    return Conversation.CantFind;
                 }
             }
             else
             {
-                Send(Channel, "The queue has reached its limit of " + MaxQueued + " songs");
+                return $"The queue has reached its limit of {MaxQueued} songs";
             }
         }
 
-        public void DirectEnqueue(SongData Song)
+        public List<string> LocalMultipleEnqueue(List<string> Queries)
         {
-            if (SongQueue.Count < MaxQueued)
-            {
-                SongQueue.Enqueue(Song);
-            }
-        }
-
-        public void Enqueue(List<string> Queries, Channel Channel, bool Local = false)
-        {
-            List<string> Added = new List<string>();
+            var Added = new List<string>();
             foreach (string Query in Queries)
             {
                 if (SongQueue.Count < MaxQueued)
                 {
-                    SongData Song = new SongData(Query, Local);
+                    var Song = new SongData(Query, true);
                     if (Song.Found)
                     {
                         SongQueue.Enqueue(Song);
-                        Added.Add(Song.Name);
+                        Added.Add($"{Song.FullName} (#{SongQueue.Count})");
                     }
                 }
             }
 
-            if (Added.Count > 0)
-            {
-                Send(Channel, "Added " + Added.Count + " songs\n`" + string.Join("`\n`", Added) + "`");
-            }
+            return Added;
         }
 
-        public void Shuffle()
+        public string Shuffle()
         {
             Random Rand = new Random();
             ConcurrentQueue<SongData> Queue = new ConcurrentQueue<SongData>();
-            IEnumerable<SongData> Songs = SongQueue.ToArray().OrderBy(x => Rand.Next());
-            foreach (SongData Song in Songs)
+            foreach (var Song in SongQueue.ToArray().OrderBy(x => Rand.Next()))
             {
                 Queue.Enqueue(Song);
             }
             
             SongQueue = Queue;
+            return GetCurrentPlaylist();
         }
 
-        public void Push(int Place, Channel Channel)
+        public string Push(int Place, int ToPlace)
         {
             ConcurrentQueue<SongData> NewQueue = new ConcurrentQueue<SongData>();
-            SongData[] Songs = SongQueue.ToArray();
-            if (Place > 0 && Songs.Length >= Place)
+            var Songs = SongQueue.ToList();
+            if (Place > 0 && Songs.Count >= Place && ToPlace > 0 && Songs.Count >= ToPlace)
             {
                 SongData Pushed = Songs[Place - 1];
-                NewQueue.Enqueue(Songs[Place - 1]);
-
-                int i = 1;
-                foreach (SongData Video in Songs)
-                {
-                    if (i++ != Place)
-                    {
-                        NewQueue.Enqueue(Video);
-                    }
-                }
-
-                SongQueue = NewQueue;
-                Send(Channel, "Pushed `" + Pushed.Name + "` to the top");
-            }
-        }
-
-        public void Repeat(int Count, Channel Channel)
-        {
-            if (CurrentSong != null)
-            {
-                SongData[] Songs = SongQueue.ToArray();
-
-                if (Count + Songs.Length > MaxQueued)
-                {
-                    Count = MaxQueued - Songs.Length;
-                }
-
-                ConcurrentQueue<SongData> NewQueue = new ConcurrentQueue<SongData>();
-
-                for (int i = 0; i < Count; i++)
-                {
-                    NewQueue.Enqueue(CurrentSong.Song);
-                }
-
+                Songs.Remove(Pushed);
+                Songs.Insert(ToPlace - 1, Pushed);
+                
                 foreach (SongData Video in Songs)
                 {
                     NewQueue.Enqueue(Video);
                 }
 
                 SongQueue = NewQueue;
-                Send(Channel, "Repeated `" + CurrentSong.Song.Name + "` " + Count + " times");
+                return Pushed.FullName;
             }
+
+            return null;
+        }
+
+        public string Repeat(int Count)
+        {
+            if (CurrentSong != null)
+            {
+                var Songs = SongQueue.ToArray();
+
+                if (Count + Songs.Length > MaxQueued)
+                {
+                    Count = MaxQueued - Songs.Length;
+                }
+
+                var NewQueue = new ConcurrentQueue<SongData>();
+
+                for (int i = 0; i < Count; i++)
+                {
+                    NewQueue.Enqueue(CurrentSong.Song);
+                }
+
+                foreach (var Song in Songs)
+                {
+                    NewQueue.Enqueue(Song);
+                }
+
+                SongQueue = NewQueue;
+                return CurrentSong.Song.FullName;
+            }
+
+            return null;
         }
 
         public List<string> Remove(List<int> Places)
@@ -395,43 +385,32 @@ namespace DiscordBot.Handlers
 
         public string GetCurrentPlaylist()
         {
-            StringBuilder Builder = new StringBuilder();
+            StringBuilder Text = new StringBuilder();
+
+            Text.Append(SongQueue.Count);
+            Text.Append(" Song(s) Queued\n");
 
             int Count = 0;
             foreach (SongData Entry in SongQueue.ToArray())
             {
-                Builder.Append(++Count);
-                Builder.Append(". ");
-                Builder.Append(Entry.Name);
-                Builder.Append("\n");
-            }
-
-            return Builder.ToString();
-        }
-
-        public void SendPlaylist(Channel Channel)
-        {
-            SongData[] Queued = SongQueue.ToArray();
-            StringBuilder Text = new StringBuilder();
-
-            Text.Append(Queued.Length);
-            Text.Append(" Song(s) Queued\n");
-
-            int Count = 0;
-            foreach (SongData Entry in Queued)
-            {
                 Text.Append(++Count);
-                Text.Append(". *");
+                Text.Append(". ");
                 Text.Append(Entry.Name);
-                Text.Append("*\n");
+                Text.Append("\n");
             }
 
-            Send(Channel, Text.ToString());
+            return Text.ToString();
         }
 
-        public void Clear()
+        /*public void SendPlaylist(Channel Channel)
+        {
+            Send(Channel, GetCurrentPlaylist());
+        }*/
+
+        public string Clear()
         {
             SongQueue = new ConcurrentQueue<SongData>();
+            return GetCurrentPlaylist();
         }
 
         private static Regex AlphaNum = new Regex("[^a-zA-Z0-9 -]");
@@ -509,6 +488,11 @@ namespace DiscordBot.Handlers
                 await Task.Delay(500);
                 await EditAsync(M, "Loaded the saved playlist (" + Count + " songs). Use `#playlist` to view it");
             }
+        }
+
+        public void ToggleAdhd()
+        {
+            Adhd = !Adhd;
         }
 
         public void Stop()

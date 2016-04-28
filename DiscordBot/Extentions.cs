@@ -1,4 +1,5 @@
 ﻿using Discord;
+using DiscordBot.Handlers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -202,6 +203,11 @@ namespace DiscordBot
                 }
                 catch (ExceptionType) { }
             }
+        }
+
+        public static MusicHandler Music(this MessageEventArgs e)
+        {
+            return ServerData.Servers[e.Server.Id].Music;
         }
     }
 }

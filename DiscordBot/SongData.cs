@@ -61,12 +61,12 @@ namespace DiscordBot
                     return;
                 }
 
-                string Yt = string.Empty;
+                string YouTubeUrl = string.Empty;
                 if (Query.IsValidUrl())
                 {
                     if (Regex.IsMatch(Query, @"http(s)?://(www\.)?(youtu\.be|youtube\.com)[\w-/=&?]+"))
                     {
-                        Yt = Query;
+                        YouTubeUrl = Query;
                     }
                     else
                     {
@@ -76,12 +76,12 @@ namespace DiscordBot
                 }
                 else
                 {
-                    Yt = Search.YoutubeResult(Query);
+                    YouTubeUrl = Search.YoutubeResult(Query);
                 }
 
-                if (Yt != string.Empty)
+                if (YouTubeUrl != string.Empty)
                 {
-                    IEnumerable<YouTubeVideo> Videos = YouTube.Default.GetAllVideos(Yt);
+                    IEnumerable<YouTubeVideo> Videos = YouTube.Default.GetAllVideos(YouTubeUrl);
                     Videos = Videos.Where(v => v.AdaptiveKind == AdaptiveKind.Audio);
                     Videos = Videos.OrderByDescending(v => v.AudioBitrate);
 

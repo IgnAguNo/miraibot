@@ -51,7 +51,8 @@ namespace DiscordBot
         public const string MashapeAPI = "2OuTDTmiT6mshgokCwR10VwkNI40p125gP1jsnofSaiWBJFcUf";
         public const string AniIdAPI = "amirz-i0ev1";
         public const string AniSecretAPI = "E7HB4bm9SJ3wbfc5klnv1I";
-        
+        private static Timer Updater;
+
         static void Main(string[] args)
         {
             Console.Title = "Loading..";
@@ -126,7 +127,7 @@ namespace DiscordBot
             Client.ServerAvailable += ClientEvents.ServerAvailable;
             Client.LeftServer += ClientEvents.LeftServer;
 
-            Timer Updater = new Timer(1000);
+            Updater = new Timer(1000);
             Updater.Elapsed += UpdateTitle;
             Updater.AutoReset = true;
             Start = DateTime.Now;
@@ -191,6 +192,7 @@ namespace DiscordBot
         public static async Task<Message> SendAsync(Channel Channel, string Message, Stream Stream = null, bool SpamProtection = true)
         {
             Message Result = null;
+
             await new Func<Task>(async delegate
             {
                 if (Channel == null || Message == null || Message == string.Empty || !Channel.GetUser(Client.CurrentUser.Id).GetPermissions(Channel).SendMessages)
@@ -229,6 +231,7 @@ namespace DiscordBot
         public static void Shutdown()
         {
             TelegramIntegration.StopPoll();
+            Updater.Stop();
 
             if (Client != null)
             {
