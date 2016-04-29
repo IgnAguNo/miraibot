@@ -18,6 +18,20 @@ namespace DiscordBot.Handlers
         
         private IAudioClient AudioClient;
         private ConcurrentQueue<SongData> SongQueue = new ConcurrentQueue<SongData>();
+        public SongData[] Songs
+        {
+            get
+            {
+                return SongQueue.ToArray();
+            }
+        }
+        public int SongCount
+        {
+            get
+            {
+                return SongQueue.Count;
+            }
+        }
         private const int MaxQueued = 30;
 
         private MusicProcessor CurrentSong;
@@ -293,11 +307,11 @@ namespace DiscordBot.Handlers
         {
             if (CurrentSong != null)
             {
-                var Songs = SongQueue.ToArray();
+                var Queue = Songs;
 
-                if (Count + Songs.Length > MaxQueued)
+                if (Count + Queue.Length > MaxQueued)
                 {
-                    Count = MaxQueued - Songs.Length;
+                    Count = MaxQueued - Queue.Length;
                 }
 
                 var NewQueue = new ConcurrentQueue<SongData>();
@@ -307,7 +321,7 @@ namespace DiscordBot.Handlers
                     NewQueue.Enqueue(CurrentSong.Song);
                 }
 
-                foreach (var Song in Songs)
+                foreach (var Song in Queue)
                 {
                     NewQueue.Enqueue(Song);
                 }
@@ -321,11 +335,10 @@ namespace DiscordBot.Handlers
 
         public List<string> Remove(List<int> Places)
         {
-            List<string> Removed = new List<string>();
+            var Removed = new List<string>();
             int i = 1;
 
-            ConcurrentQueue<SongData> NewQueue = new ConcurrentQueue<SongData>();
-            SongData[] Songs = SongQueue.ToArray();
+            var NewQueue = new ConcurrentQueue<SongData>();
             foreach (SongData Video in Songs)
             {
                 if (Places.Contains(i++))
@@ -378,11 +391,6 @@ namespace DiscordBot.Handlers
             }
         }
 
-        public int GetPlaylistCount()
-        {
-            return SongQueue.ToArray().Count();
-        }
-
         public string GetCurrentPlaylist()
         {
             StringBuilder Text = new StringBuilder();
@@ -391,7 +399,7 @@ namespace DiscordBot.Handlers
             Text.Append(" Song(s) Queued\n");
 
             int Count = 0;
-            foreach (SongData Entry in SongQueue.ToArray())
+            foreach (var Entry in Songs)
             {
                 Text.Append(++Count);
                 Text.Append(". ");
@@ -431,7 +439,7 @@ namespace DiscordBot.Handlers
             }
             else
             {
-                Data = SongQueue.ToArray();
+                Data = Songs;
             }
 
             using (BinaryWriter Writer = new BinaryWriter(File.Open(Bot.MainDir + "data.playlist." + Identifier + ".txt", FileMode.Create)))

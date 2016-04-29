@@ -99,7 +99,10 @@ namespace DiscordBot
                 if (Music != null && (string)s != string.Empty)
                 {
                     string[] Data = await ParseInlineId((string)s);
-                    await Respond(Data[0], e, "Resolving song..");
+                    if (Data[0] != null)
+                    {
+                        await Respond(Data[0], e, "Resolving song..");
+                    }
 
                     var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(Data[1].ToLower())).ToArray();
                     string Song;
@@ -178,7 +181,7 @@ namespace DiscordBot
                     }
                 }
             });
-            
+
             Commands.Add("remove", async (s, e) =>
             {
                 var Music = GetMusic(e);
@@ -187,13 +190,17 @@ namespace DiscordBot
                     string[] Data = await ParseInlineId((string)s);
                     var Removed = Music.Remove(Data[1].ParseInts());
 
-                    if (Removed.Count > 0 && e.ReplyToMessage != null)
+                    if (Removed.Count > 0)
                     {
                         await Respond(Data[0], e, "Removed " + Removed.Join(", "));
                     }
                     else
                     {
-                        int Count = Music.GetPlaylistCount();
+                        await Respond(Data[0], e, "I couldn't remove that song");
+                    }
+                    /*else
+                    {
+                        int Count = Music.SongCount;
                         if (Count == 0)
                         {
                             await Respond(Data[0], e, "There is nothing I can remove");
@@ -227,7 +234,7 @@ namespace DiscordBot
 
                             await Respond(Data[0], e, Music.GetCurrentPlaylist() + "\nWhich song should I remove?", Markup: KeyboardMarkup);
                         }
-                    }
+                    }*/
                 }
             });
 
@@ -242,7 +249,7 @@ namespace DiscordBot
                     NextPairChannel = null;
                 }
             });
-            
+
             Commands.Add("hrc", (s, e) =>
             {
                 try
@@ -324,81 +331,105 @@ namespace DiscordBot
         private static long Identifier = 0;
         private static async void Api_InlineQueryReceived(object s, InlineQueryEventArgs e)
         {
+            const int MaxResults = 20;
+
             try
             {
-                long MsgId = Interlocked.Increment(ref Identifier) * 10;
+                long MsgId = Interlocked.Increment(ref Identifier) * MaxResults;
                 var Results = new List<InlineQueryResult>();
                 InlineQueryResultVideo Result;
-                
+
                 int i = 0;
-                foreach (var Key in new string[] { "song", "queue", "skip" })
+
+                if (e.InlineQuery.Query == "remove")
                 {
-                    if (Key.StartsWith(e.InlineQuery.Query))
+                    while (i < MaxResults)
                     {
                         Result = Result = new InlineQueryResultVideo();
                         Result.Id = (MsgId + i++).ToString();
-                        Result.Title = "Use command";
-                        Result.Description = Key;
+                        Result.Title = "Remove Song";
+                        Result.Description = $"#{i}";
                         Result.ThumbUrl = "https://github.com/google/material-design-icons/blob/master/av/2x_web/ic_note_black_48dp.png?raw=true";
                         Result.MimeType = "text/html";
                         Result.Url = Result.ThumbUrl;
                         Result.InputMessageContent = new InputTextMessageContent();
-                        ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/{e.InlineQuery.Query}@{Me.Username} [{MsgId}]";
+                        ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/remove@{Me.Username} [{MsgId}] {i}";
                         Result.ReplyMarkup = IKM("Loading..", "http://www.google.nl", "/");
 
                         Results.Add(Result);
                     }
                 }
-
-                var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(e.InlineQuery.Query)).ToArray();
-
-                var ListRequest = Search.YT.Search.List("snippet");
-                ListRequest.MaxResults = Commands.Count - i;
-
-                if (Files.Length < ListRequest.MaxResults)
+                else
                 {
-                    ListRequest.MaxResults -= Files.Length;
-
-                    foreach (var File in Files)
+                    foreach (var Key in new string[] { "song", "queue", "skip" })
                     {
-                        Result = new InlineQueryResultVideo();
-                        Result.Id = (MsgId + i++).ToString();
-                        Result.Title = File.Substring(SongData.MusicDir.Length);
-                        Result.Title = Result.Title.Substring(0, Result.Title.Length - 4);
-                        Result.Caption = Result.Title;
-                        Result.Description = "Local Mp3 File";
-                        Result.ThumbUrl = "https://github.com/google/material-design-icons/blob/master/av/2x_web/ic_play_arrow_black_48dp.png?raw=true";
-                        Result.MimeType = "video/mp4";
-                        Result.Url = Result.ThumbUrl;
-                        Result.InputMessageContent = new InputTextMessageContent();
-                        ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/add@{Me.Username} [{MsgId}] {Result.Title}";
-                        Result.ReplyMarkup = IKM("Loading..", "http://www.google.nl", "/");
-                        Results.Add(Result);
+                        if (Key.StartsWith(e.InlineQuery.Query))
+                        {
+                            Result = Result = new InlineQueryResultVideo();
+                            Result.Id = (MsgId + i++).ToString();
+                            Result.Title = "Use command";
+                            Result.Description = Key;
+                            Result.ThumbUrl = "https://github.com/google/material-design-icons/blob/master/av/2x_web/ic_note_black_48dp.png?raw=true";
+                            Result.MimeType = "text/html";
+                            Result.Url = Result.ThumbUrl;
+                            Result.InputMessageContent = new InputTextMessageContent();
+                            ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/{Key}@{Me.Username} [{MsgId}]";
+                            Result.ReplyMarkup = IKM("Loading..", "http://www.google.com", "/");
+
+                            Results.Add(Result);
+                        }
+                    }
+
+                    var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(e.InlineQuery.Query)).ToArray();
+
+                    var ListRequest = Search.YT.Search.List("snippet");
+                    ListRequest.MaxResults = MaxResults - i;
+
+                    if (Files.Length < ListRequest.MaxResults)
+                    {
+                        ListRequest.MaxResults -= Files.Length;
+
+                        foreach (var File in Files)
+                        {
+                            Result = new InlineQueryResultVideo();
+                            Result.Id = (MsgId + i++).ToString();
+                            Result.Title = File.Substring(SongData.MusicDir.Length);
+                            Result.Title = Result.Title.Substring(0, Result.Title.Length - 4);
+                            Result.Caption = Result.Title;
+                            Result.Description = "Local Mp3 File";
+                            Result.ThumbUrl = "https://github.com/google/material-design-icons/blob/master/av/2x_web/ic_play_arrow_black_48dp.png?raw=true";
+                            Result.MimeType = "video/mp4";
+                            Result.Url = Result.ThumbUrl;
+                            Result.InputMessageContent = new InputTextMessageContent();
+                            ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/add@{Me.Username} [{MsgId}] {Result.Title}";
+                            Result.ReplyMarkup = IKM("Loading..", "http://www.google.com", "/");
+                            Results.Add(Result);
+                        }
+                    }
+
+                    if (ListRequest.MaxResults > 0)
+                    {
+                        ListRequest.Q = e.InlineQuery.Query;
+                        ListRequest.Type = "video";
+
+                        foreach (var Video in ListRequest.Execute().Items)
+                        {
+                            Result = new InlineQueryResultVideo();
+                            Result.Id = (MsgId + i++).ToString();
+                            Result.Title = Video.Snippet.Title;
+                            Result.Caption = Result.Title;
+                            Result.Description = Video.Snippet.Description;
+                            Result.ThumbUrl = Video.Snippet.Thumbnails.Maxres?.Url ?? Video.Snippet.Thumbnails.Default__?.Url ?? string.Empty;
+                            Result.MimeType = "text/html";
+                            Result.Url = $"https://youtu.be/{Video.Id.VideoId}";
+                            Result.InputMessageContent = new InputTextMessageContent();
+                            ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/add@{Me.Username} [{MsgId}] {Result.Url}";
+                            Result.ReplyMarkup = IKM("Open Song", Result.Url, "/");
+                            Results.Add(Result);
+                        }
                     }
                 }
 
-                if (ListRequest.MaxResults > 0)
-                {
-                    ListRequest.Q = e.InlineQuery.Query;
-                    ListRequest.Type = "video";
-
-                    foreach (var Video in ListRequest.Execute().Items)
-                    {
-                        Result = new InlineQueryResultVideo();
-                        Result.Id = (MsgId + i++).ToString();
-                        Result.Title = Video.Snippet.Title;
-                        Result.Caption = Result.Title;
-                        Result.Description = Video.Snippet.Description;
-                        Result.ThumbUrl = Video.Snippet.Thumbnails.Maxres?.Url ?? Video.Snippet.Thumbnails.Default__?.Url ?? string.Empty;
-                        Result.MimeType = "text/html";
-                        Result.Url = $"https://youtu.be/{Video.Id.VideoId}";
-                        Result.InputMessageContent = new InputTextMessageContent();
-                        ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/add@{Me.Username} [{MsgId}] {Result.Url}";
-                        Result.ReplyMarkup = IKM("Open Song", Result.Url, "/");
-                        Results.Add(Result);
-                    }
-                }
-                
                 await Api.AnswerInlineQuery(e.InlineQuery.Id, Results.ToArray(), 0);
             }
             catch (Exception Ex)
