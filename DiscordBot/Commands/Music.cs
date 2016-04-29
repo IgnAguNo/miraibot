@@ -37,12 +37,19 @@ namespace DiscordBot.Commands
             string Search = ((string)s).ToLower();
             if (Search != string.Empty)
             {
-                List<string> ToAdd = new List<string>();
+                var ToAdd = new List<string>();
                 if (Files != null)
                 {
-                    foreach (int Num in Search.ParseInts())
+                    if (Search == "all")
                     {
-                        ToAdd.Add(Files[Num - 1]);
+                        ToAdd = Files.ToList();
+                    }
+                    else
+                    {
+                        foreach (int Num in Search.ParseInts())
+                        {
+                            ToAdd.Add(Files[Num - 1]);
+                        }
                     }
 
                     Files = null;

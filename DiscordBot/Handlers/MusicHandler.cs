@@ -222,7 +222,7 @@ namespace DiscordBot.Handlers
                 if (Song.Found)
                 {
                     SongQueue.Enqueue(Song);
-                    return $"Added `{Song.Name}` at #{SongQueue.Count}";
+                    return $"Added `{Song.FullName.Compact(100)}` at #{SongQueue.Count}";
                 }
                 else
                 {
@@ -365,9 +365,9 @@ namespace DiscordBot.Handlers
             }
         }
 
-        public string GetCurrentSongName()
+        public SongData GetCurrentSong()
         {
-            return CurrentSong?.Song.FullName.Compact(100);
+            return CurrentSong?.Song;
         }
 
         public void SendCurrentSong(Channel Channel)

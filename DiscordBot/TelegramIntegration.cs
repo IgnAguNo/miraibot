@@ -1,11 +1,11 @@
 ﻿using DiscordBot.Commands;
 using DiscordBot.Handlers;
-using Google.Apis.YouTube.v3.Data;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -37,15 +37,55 @@ namespace DiscordBot
             return ServerData.Servers[Id].Music;
         }
 
-        public static async void Respond(Message Msg, string Text, bool DisablePreview = false)
+        public static async void Respond(Message Msg, string Text, bool DisablePreview = true, ReplyMarkup Markup = null)
         {
             try
             {
-                await Api.SendTextMessage(Msg.Chat.Id, Text.Replace('`', '"'), DisablePreview, Msg.MessageId);
+                await Api.SendTextMessage(Msg.Chat.Id, Text.Replace('`', '"'), DisablePreview, Msg.MessageId, Markup);
             }
-            catch
+            catch { }
+        }
+
+        public static async Task Respond(string InlineId, Message Msg, string Text, bool DisablePreview = true, ReplyMarkup Markup = null)
+        {
+            Text = Text.Replace('`', '"');
+
+            if (InlineId != null)
             {
+                try
+                {
+                    await Api.EditInlineMessageText(InlineId, Text, disableWebPagePreview: DisablePreview);
+                    await Api.EditInlineMessageReplyMarkup(InlineId, Markup);
+                }
+                catch (Newtonsoft.Json.JsonSerializationException) { }
             }
+            else
+            {
+                Respond(Msg, Text, DisablePreview, Markup);
+            }
+        }
+
+        private static async Task<string[]> ParseInlineId(string Command)
+        {
+            long ResultId = -1;
+            string InlineId = null;
+
+            var Explode = Command.Split(new char[] { ' ' }, 2);
+            if (Explode[0].StartsWith("[") && Explode[0].EndsWith("]") && long.TryParse(Explode[0].Substring(1, Explode[0].Length - 2), out ResultId) && ResultId > 0)
+            {
+                for (int i = 0; i < 15; i++)
+                {
+                    if (InlineMessageIds.TryRemove(ResultId, out InlineId))
+                    {
+                        Command = Explode.Length == 1 ? string.Empty : Explode[1];
+                        break;
+                    }
+
+                    await Task.Delay(100);
+                }
+            }
+
+            return new string[] { InlineId, Command };
         }
 
         public static async void Start(string ApiKey)
@@ -53,114 +93,122 @@ namespace DiscordBot
             Api = new Api(ApiKey);
             Me = await Api.GetMe();
 
-            Commands.Add("add", (s, e) =>
+            Commands.Add("add", async (s, e) =>
             {
                 var Music = GetMusic(e);
-                if (Music != null)
+                if (Music != null && (string)s != string.Empty)
                 {
-                    var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(((string)s).ToLower())).ToArray();
+                    string[] Data = await ParseInlineId((string)s);
+                    await Respond(Data[0], e, "Resolving song..");
+
+                    var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(Data[1].ToLower())).ToArray();
+                    string Song;
                     if (Files.Length == 0)
                     {
-                        Respond(e, Music.Enqueue((string)s));
+                        Song = Music.Enqueue(Data[1]);
                     }
                     else
                     {
-                        Respond(e, Music.Enqueue(Files[0], true), true);
+                        Song = Music.Enqueue(Files[0], true);
                     }
+
+                    await Respond(Data[0], e, Song);
                 }
             });
 
-            Commands.Add("song", (s, e) =>
+            Commands.Add("song", async (s, e) =>
             {
                 var Music = GetMusic(e);
                 if (Music != null)
                 {
-                    string Song = Music.GetCurrentSongName();
+                    string[] Data = await ParseInlineId((string)s);
+                    string Song = Music.GetCurrentSong()?.FullName;
                     if (Song == null)
                     {
-                        Respond(e, "Nothing is playing right now");
+                        await Respond(Data[0], e, "Nothing is playing right now");
                     }
                     else
                     {
-                        Respond(e, "Currently playing " + Song);
+                        await Respond(Data[0], e, "I'm playing " + Song);
                     }
                 }
             });
 
-            Commands.Add("queue", (s, e) =>
+            Commands.Add("queue", async (s, e) =>
             {
                 var Music = GetMusic(e);
                 if (Music != null)
                 {
+                    string[] Data = await ParseInlineId((string)s);
                     string Playlist = Music.GetCurrentPlaylist();
                     if (Playlist == string.Empty)
                     {
-                        Respond(e, "The queue is empty");
+                        await Respond(Data[0], e, "The queue is empty");
                     }
                     else
                     {
-                        Respond(e, Playlist);
+                        await Respond(Data[0], e, Playlist);
                     }
                 }
             });
 
-            Commands.Add("skip", (s, e) =>
+            Commands.Add("skip", async (s, e) =>
             {
                 var Music = GetMusic(e);
                 if (Music != null)
                 {
+                    string[] Data = await ParseInlineId((string)s);
                     if (Music.Playing)
                     {
                         string NextTitle = Music.PeekNextName();
                         if (NextTitle == null)
                         {
-                            Respond(e, "Reached the end of the queue");
+                            await Respond(Data[0], e, "Skipped, no more songs left");
                         }
                         else
                         {
-                            Respond(e, "Now playing " + NextTitle.Compact(100));
+                            await Respond(Data[0], e, "Skipped to " + NextTitle.Compact(100));
                         }
 
                         Music.Skip();
                     }
                     else
                     {
-                        Respond(e, "I'm not playing any music at the moment");
+                        await Respond(Data[0], e, "I'm not playing any music at the moment");
                     }
                 }
             });
-
+            
             Commands.Add("remove", async (s, e) =>
             {
                 var Music = GetMusic(e);
                 if (Music != null)
                 {
-                    var Removed = Music.Remove(s.ParseInts());
+                    string[] Data = await ParseInlineId((string)s);
+                    var Removed = Music.Remove(Data[1].ParseInts());
 
-                    if (Removed.Count > 0)
+                    if (Removed.Count > 0 && e.ReplyToMessage != null)
                     {
-                        Respond(e, "Removed " + Removed.Join(", "));
+                        await Respond(Data[0], e, "Removed " + Removed.Join(", "));
                     }
                     else
                     {
                         int Count = Music.GetPlaylistCount();
                         if (Count == 0)
                         {
-                            Respond(e, "There is nothing I can remove");
+                            await Respond(Data[0], e, "There is nothing I can remove");
                         }
                         else
                         {
-                            await Api.SendChatAction(e.Chat.Id, ChatAction.Typing);
-
                             var KeyboardMarkup = new ReplyKeyboardMarkup();
                             int Row = -1;
 
-                            KeyboardMarkup.Keyboard = new string[(int)Math.Ceiling((double)Count / 2)][];
+                            KeyboardMarkup.Keyboard = new KeyboardButton[(int)Math.Ceiling((double)Count / 2)][];
                             for (int i = 0; i < (2 * KeyboardMarkup.Keyboard.Length); i++)
                             {
                                 if (i % 2 == 0)
                                 {
-                                    KeyboardMarkup.Keyboard[++Row] = new string[2];
+                                    KeyboardMarkup.Keyboard[++Row] = new KeyboardButton[2];
                                 }
 
                                 if (i < Count)
@@ -177,7 +225,7 @@ namespace DiscordBot
                             KeyboardMarkup.ResizeKeyboard = true;
                             KeyboardMarkup.Selective = true;
 
-                            await Api.SendTextMessage(e.Chat.Id, Music.GetCurrentPlaylist() + "\nWhich song should I remove?", replyToMessageId: e.MessageId, replyMarkup: KeyboardMarkup);
+                            await Respond(Data[0], e, Music.GetCurrentPlaylist() + "\nWhich song should I remove?", Markup: KeyboardMarkup);
                         }
                     }
                 }
@@ -189,19 +237,19 @@ namespace DiscordBot
                 {
                     Db.SetDiscordServerId(e.Chat.Id, NextPairChannel.Server.Id);
                     Respond(e, "This chat has now been succesfully paired with " + NextPairChannel.Server.Name);
-                    Bot.Send(NextPairChannel, "This server has been paired with " + ((e.Chat.Type == ChatType.Private) ? e.Chat.Title + " by " : "") + e.From.Username);
+                    Bot.Send(NextPairChannel, "This server has been paired with " + ((e.Chat.Type == ChatType.Private) ? "" : e.Chat.Title + " by ") + e.From.Username);
 
                     NextPairChannel = null;
                 }
             });
-
+            
             Commands.Add("hrc", (s, e) =>
             {
                 try
                 {
                     if (e.Chat.Type == ChatType.Private || e.Chat.Title.StartsWith("H"))
                     {
-                        Respond(e, Lewd.GetRandomLewd(s, (e.From.Username != "Akkey" && e.Chat.Type != ChatType.Private)));
+                        Respond(e, Lewd.GetRandomLewd(s, (e.From.Username != "Akkey" && e.Chat.Type != ChatType.Private)), false);
                     }
                 }
                 catch (Exception Ex)
@@ -214,6 +262,8 @@ namespace DiscordBot
 
             Api.MessageReceived += Api_MessageReceived;
             Api.InlineQueryReceived += Api_InlineQueryReceived;
+            Api.ChosenInlineResultReceived += Api_ChosenInlineResultReceived;
+            Api.CallbackQueryReceived += Api_CallbackQueryReceived;
             Api.StartReceiving();
         }
 
@@ -240,15 +290,15 @@ namespace DiscordBot
                     {
                         if (Text.StartsWith("/" + KVP.Key))
                         {
-                            string Substring = Text.Substring(KVP.Key.Length + 1);
-                            if (Substring.StartsWith(Mention))
+                            string SubText = Text.Substring(KVP.Key.Length + 1);
+                            if (SubText.StartsWith(Mention))
                             {
-                                Substring = Substring.Substring(Mention.Length);
+                                SubText = SubText.Substring(Mention.Length);
                             }
 
-                            if (Substring == string.Empty || Substring.StartsWith(" "))
+                            if (SubText == string.Empty || SubText.StartsWith(" "))
                             {
-                                KVP.Value(Substring.Trim(), Msg);
+                                KVP.Value(SubText.Trim(), Msg);
                                 return;
                             }
                         }
@@ -261,56 +311,138 @@ namespace DiscordBot
             }
         }
 
+        private static InlineKeyboardMarkup IKM(string Text, string Url, string CallbackData)
+        {
+            var Markup = new InlineKeyboardMarkup();
+            Markup.InlineKeyboard = new InlineKeyboardButton[][] { new InlineKeyboardButton[] { new InlineKeyboardButton() } };
+            Markup.InlineKeyboard[0][0].Text = Text;
+            Markup.InlineKeyboard[0][0].Url = Url;
+            Markup.InlineKeyboard[0][0].CallbackData = CallbackData;
+            return Markup;
+        }
+
+        private static long Identifier = 0;
         private static async void Api_InlineQueryReceived(object s, InlineQueryEventArgs e)
         {
             try
             {
+                long MsgId = Interlocked.Increment(ref Identifier) * 10;
                 var Results = new List<InlineQueryResult>();
-                var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(e.InlineQuery.Query)).ToArray();
-
-                int i = 1;
-                InlineQueryResultVideo Vid;
-
-                if (Files.Length <= 20)
+                InlineQueryResultVideo Result;
+                
+                int i = 0;
+                foreach (var Key in new string[] { "song", "queue", "skip" })
                 {
-                    foreach (var Result in Files)
+                    if (Key.StartsWith(e.InlineQuery.Query))
                     {
-                        Vid = new InlineQueryResultVideo();
-                        Vid.Id = e.InlineQuery.Id + i++;
-                        Vid.Title = Result.Substring(SongData.MusicDir.Length);
-                        Vid.Title = Vid.Title.Substring(0, Vid.Title.Length - 4);
-                        Vid.Description = "Local Mp3 File";
-                        Vid.ThumbUrl = "https://github.com/google/material-design-icons/blob/master/av/2x_web/ic_play_arrow_black_48dp.png?raw=true";
-                        Vid.MimeType = "video/mp4";
-                        Vid.Url = "https://github.com/google/material-design-icons/blob/master/av/2x_web/ic_play_arrow_black_48dp.png?raw=true";
-                        Vid.MessageText = $"/add@{Me.Username} {Vid.Title}";
-                        Results.Add(Vid);
+                        Result = Result = new InlineQueryResultVideo();
+                        Result.Id = (MsgId + i++).ToString();
+                        Result.Title = "Use command";
+                        Result.Description = Key;
+                        Result.ThumbUrl = "https://github.com/google/material-design-icons/blob/master/av/2x_web/ic_note_black_48dp.png?raw=true";
+                        Result.MimeType = "text/html";
+                        Result.Url = Result.ThumbUrl;
+                        Result.InputMessageContent = new InputTextMessageContent();
+                        ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/{e.InlineQuery.Query}@{Me.Username} [{MsgId}]";
+                        Result.ReplyMarkup = IKM("Loading..", "http://www.google.nl", "/");
+
+                        Results.Add(Result);
                     }
                 }
 
+                var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(e.InlineQuery.Query)).ToArray();
+
                 var ListRequest = Search.YT.Search.List("snippet");
-                ListRequest.Q = e.InlineQuery.Query;
-                ListRequest.MaxResults = 5;
-                ListRequest.Type = "video";
-                foreach (var Result in ListRequest.Execute().Items)
+                ListRequest.MaxResults = Commands.Count - i;
+
+                if (Files.Length < ListRequest.MaxResults)
                 {
-                    Vid = new InlineQueryResultVideo();
-                    Vid.Id = e.InlineQuery.Id + i++;
-                    Vid.Title = Result.Snippet.Title;
-                    Vid.Description = Result.Snippet.Description;
-                    Vid.ThumbUrl = Result.Snippet.Thumbnails.Maxres?.Url ?? Result.Snippet.Thumbnails.Default__?.Url ?? string.Empty;
-                    Vid.MimeType = "text/html";
-                    Vid.Url = $"http://www.youtube.com/watch?v={Result.Id.VideoId}";
-                    Vid.MessageText = $"/add@{Me.Username} http://www.youtube.com/watch?v={Result.Id.VideoId}";
-                    Results.Add(Vid);
+                    ListRequest.MaxResults -= Files.Length;
+
+                    foreach (var File in Files)
+                    {
+                        Result = new InlineQueryResultVideo();
+                        Result.Id = (MsgId + i++).ToString();
+                        Result.Title = File.Substring(SongData.MusicDir.Length);
+                        Result.Title = Result.Title.Substring(0, Result.Title.Length - 4);
+                        Result.Caption = Result.Title;
+                        Result.Description = "Local Mp3 File";
+                        Result.ThumbUrl = "https://github.com/google/material-design-icons/blob/master/av/2x_web/ic_play_arrow_black_48dp.png?raw=true";
+                        Result.MimeType = "video/mp4";
+                        Result.Url = Result.ThumbUrl;
+                        Result.InputMessageContent = new InputTextMessageContent();
+                        ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/add@{Me.Username} [{MsgId}] {Result.Title}";
+                        Result.ReplyMarkup = IKM("Loading..", "http://www.google.nl", "/");
+                        Results.Add(Result);
+                    }
                 }
 
+                if (ListRequest.MaxResults > 0)
+                {
+                    ListRequest.Q = e.InlineQuery.Query;
+                    ListRequest.Type = "video";
+
+                    foreach (var Video in ListRequest.Execute().Items)
+                    {
+                        Result = new InlineQueryResultVideo();
+                        Result.Id = (MsgId + i++).ToString();
+                        Result.Title = Video.Snippet.Title;
+                        Result.Caption = Result.Title;
+                        Result.Description = Video.Snippet.Description;
+                        Result.ThumbUrl = Video.Snippet.Thumbnails.Maxres?.Url ?? Video.Snippet.Thumbnails.Default__?.Url ?? string.Empty;
+                        Result.MimeType = "text/html";
+                        Result.Url = $"https://youtu.be/{Video.Id.VideoId}";
+                        Result.InputMessageContent = new InputTextMessageContent();
+                        ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/add@{Me.Username} [{MsgId}] {Result.Url}";
+                        Result.ReplyMarkup = IKM("Open Song", Result.Url, "/");
+                        Results.Add(Result);
+                    }
+                }
+                
                 await Api.AnswerInlineQuery(e.InlineQuery.Id, Results.ToArray(), 0);
             }
             catch (Exception Ex)
             {
                 Ex.Log();
             }
+        }
+
+        private static ConcurrentDictionary<long, string> InlineMessageIds = new ConcurrentDictionary<long, string>();
+
+        private static async void Api_ChosenInlineResultReceived(object s, ChosenInlineResultEventArgs e)
+        {
+            try
+            {
+                long Result;
+                if (long.TryParse(e.ChosenInlineResult.ResultId, out Result))
+                {
+                    Result -= (Result % 10);
+                    if (InlineMessageIds.TryAdd(Result, e.ChosenInlineResult.InlineMessageId))
+                    {
+                        await Task.Delay(3000);
+                        string Value;
+                        if (InlineMessageIds.TryRemove(Result, out Value))
+                        {
+                            "The inline message id was not used".Log();
+                        }
+                    }
+                }
+                else
+                {
+                    "Could not add the inline message id".Log();
+                }
+
+                //await Api.EditInlineMessageText(e.ChosenInlineResult.InlineMessageId, "Added Song");
+            }
+            catch (Exception Ex)
+            {
+                Ex.Log();
+            }
+        }
+
+        private static void Api_CallbackQueryReceived(object s, CallbackQueryEventArgs e)
+        {
+            //await Api.EditInlineMessageText(e.CallbackQuery.InlineMessageId, "test2");
         }
 
         public static void StopPoll()
