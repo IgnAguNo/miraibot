@@ -3,6 +3,7 @@ using DiscordBot.Handlers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace DiscordBot
 {
@@ -29,6 +30,15 @@ namespace DiscordBot
 
             Music = new MusicHandler(UseServer);
             Music.Run();
+
+            foreach (var Channel in UseServer.VoiceChannels)
+            {
+                if (Channel.Name == "Music")
+                {
+                    Music.OptionalConnectClient(Channel);
+                    break;
+                }
+            }
         }
 
         public List<Channel> ChannelsWithCategory(string Category)

@@ -17,6 +17,25 @@ namespace DiscordBot.Handlers
         public static ByteBuffer Buffers;
         
         private IAudioClient AudioClient;
+        private Channel voiceChannel = null;
+        public Channel VoiceChannel
+        {
+            get
+            {
+                return voiceChannel;
+            }
+            set
+            {
+                voiceChannel = value;
+                DisconnectClient().ContinueWith(async (e) =>
+                {
+                    await new Func<Task>(async delegate
+                    {
+                        AudioClient = await VoiceChannel.JoinAudio();
+                    }).UntilNoExceptionAsync(10);
+                });
+            }
+        }
         private ConcurrentQueue<SongData> SongQueue = new ConcurrentQueue<SongData>();
         public SongData[] Songs
         {
@@ -186,21 +205,16 @@ namespace DiscordBot.Handlers
             await DisconnectClient();
         }
 
-        public async Task ConnectClient(Channel VoiceChannel)
+        public void OptionalConnectClient(Channel NewVoiceChannel)
         {
-            await DisconnectClient();
-            await new Func<Task>(async delegate
+            try
             {
-                AudioClient = await VoiceChannel.JoinAudio();
-            }).UntilNoExceptionAsync(10);
-        }
-
-        public async void OptionalConnectClient(Channel VoiceChannel)
-        {
-            if (VoiceChannel != null && (AudioClient == null || AudioClient.State != ConnectionState.Connected))
-            {
-                await ConnectClient(VoiceChannel);
+                if (NewVoiceChannel != null && (AudioClient == null || AudioClient.State != ConnectionState.Connected))
+                {
+                    VoiceChannel = NewVoiceChannel;
+                }
             }
+            catch { }
         }
 
         public async Task DisconnectClient()
@@ -222,10 +236,7 @@ namespace DiscordBot.Handlers
                     AudioClient = null;
                 }
             }
-            catch (Exception Ex)
-            {
-                Ex.Log();
-            }
+            catch { }
         }
 
         public string Enqueue(string Query, bool Local = false)

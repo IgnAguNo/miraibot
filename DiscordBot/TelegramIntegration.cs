@@ -402,12 +402,30 @@ namespace DiscordBot
                             Result.Url = Result.ThumbUrl;
                             Result.InputMessageContent = new InputTextMessageContent();
                             ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/add@{Me.Username} [{MsgId}] {Result.Title}";
-                            Result.ReplyMarkup = IKM("Loading..", "http://www.google.com", "/");
+                            Result.ReplyMarkup = IKM("Loading..", Result.ThumbUrl, "/");
                             Results.Add(Result);
                         }
                     }
 
-                    if (ListRequest.MaxResults > 0)
+                    if (e.InlineQuery.Query.IsValidUrl() && ListRequest.MaxResults != 0)
+                    {
+                        ListRequest.MaxResults--;
+
+                        Result = new InlineQueryResultVideo();
+                        Result.Id = (MsgId + i++).ToString();
+                        Result.Title = e.InlineQuery.Query;
+                        Result.Caption = Result.Title;
+                        Result.Description = "Remote File";
+                        Result.ThumbUrl = "https://github.com/google/material-design-icons/blob/master/av/2x_web/ic_play_arrow_black_48dp.png?raw=true";
+                        Result.MimeType = "video/mp4";
+                        Result.Url = Result.ThumbUrl;
+                        Result.InputMessageContent = new InputTextMessageContent();
+                        ((InputTextMessageContent)Result.InputMessageContent).MessageText = $"/add@{Me.Username} [{MsgId}] {e.InlineQuery.Query}";
+                        Result.ReplyMarkup = IKM("Loading..", Result.ThumbUrl, "/");
+                        Results.Add(Result);
+                    }
+
+                    if (ListRequest.MaxResults != 0)
                     {
                         ListRequest.Q = e.InlineQuery.Query;
                         ListRequest.Type = "video";

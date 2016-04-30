@@ -1,5 +1,4 @@
 ﻿using Discord;
-using DiscordBot.Handlers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,15 +7,15 @@ namespace DiscordBot.Commands
 {
     class Music
     {
-        public static async void Join(object s, MessageEventArgs e)
+        public static void Join(object s, MessageEventArgs e)
         {
             if (e.User.VoiceChannel != null)
             {
-                await e.Music().ConnectClient(e.User.VoiceChannel);
+                e.Music().VoiceChannel = e.User.VoiceChannel;
             }
             else
             {
-                e.Respond("..where do you want me to join?");
+                e.Respond("Please join a voice channel first");
             }
         }
 

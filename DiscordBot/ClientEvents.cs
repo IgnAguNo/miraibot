@@ -31,7 +31,17 @@ namespace DiscordBot
                         }
                     }
 
-                    Text.Log();
+                    if (e.Message == "Disconnected")
+                    {
+                        foreach (var Server in ServerData.Servers.Values)
+                        {
+                            Server.Music.OptionalConnectClient(Server.Music.VoiceChannel);
+                        }
+                    }
+                    else
+                    {
+                        Text.Log();
+                    }
                 }
                 catch (Exception Ex)
                 {

@@ -109,11 +109,6 @@ namespace DiscordBot
             }.Build());
 
             MusicHandler.Buffers = new ByteBuffer(1920 * 2, (int)Math.Pow(2, 16));
-
-            new Func<Task>(async delegate
-            {
-                await Client.Connect(Token);
-            }).UntilNoExceptionAsync<Discord.Net.WebSocketException>(3).Wait();
             
             InitCommands();
 
@@ -127,11 +122,18 @@ namespace DiscordBot
             Client.ServerAvailable += ClientEvents.ServerAvailable;
             Client.LeftServer += ClientEvents.LeftServer;
 
+            new Func<Task>(async delegate
+            {
+                await Client.Connect(Token);
+            }).UntilNoExceptionAsync<Discord.Net.WebSocketException>(3).Wait();
+
             Updater = new Timer(1000);
             Updater.Elapsed += UpdateTitle;
             Updater.AutoReset = true;
             Start = DateTime.Now;
             Updater.Start();
+
+            "The Discord functions have successfully booted".Log();
 
             handler = new ConsoleEventDelegate(ConsoleEventCallback);
             SetConsoleCtrlHandler(handler, true);
@@ -145,8 +147,6 @@ namespace DiscordBot
                 Shutdown();
             };
 
-            "The Discord functions have successfully booted".Log();
-
             if (File.Exists(TelegramFile))
             {
                 TelegramIntegration.Start(File.ReadAllText(TelegramFile).Trim());
@@ -155,7 +155,7 @@ namespace DiscordBot
             Client.Wait();
         }
 
-        private static void UpdateTitle(object s, ElapsedEventArgs e)
+        public static void UpdateTitle(object s, ElapsedEventArgs e)
         {
             try
             {
@@ -244,8 +244,7 @@ namespace DiscordBot
                         $"{SD.Music.Save(SD.Server)} songs saved in {SD.Name}".Log();
                         SD.StopHandlers();
                     }
-
-                    //Task.Delay(350).Wait();
+                    
                     Client.Disconnect().Wait();
                 }
                 catch { }
