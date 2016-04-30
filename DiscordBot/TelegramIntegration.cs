@@ -90,8 +90,17 @@ namespace DiscordBot
 
         public static async void Start(string ApiKey)
         {
-            Api = new Api(ApiKey);
-            Me = await Api.GetMe();
+            try
+            {
+                Api = new Api(ApiKey);
+                Me = await Api.GetMe();
+            }
+            catch (Exception Ex)
+            {
+                Ex.Log();
+                "Telegram integration could not be loaded".Log();
+                return;
+            }
 
             Commands.Add("add", async (s, e) =>
             {
