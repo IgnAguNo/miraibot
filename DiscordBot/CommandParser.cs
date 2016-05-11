@@ -31,7 +31,7 @@ namespace DiscordBot
                 {
                     Search.AnimeInfo(Raw.TrimStart('{').TrimEnd('}'), e);
                 }
-                else if (e.Message.Text.StartsWith("<") && e.Message.Text.EndsWith(">") && Db.HasPermission(e.User.Id, "manga"))
+                else if (e.Message.Text.StartsWith("<") && !e.Message.Text.StartsWith("<@") && e.Message.Text.EndsWith(">") && Db.HasPermission(e.User.Id, "manga"))
                 {
                     Search.MangaInfo(Raw.TrimStart('<').TrimEnd('>'), e);
                 }
