@@ -8,7 +8,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
+using Telegram.Bot.Args;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.InlineQueryResults;
+using Telegram.Bot.Types.InputMessageContents;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace DiscordBot
 {
@@ -16,7 +21,7 @@ namespace DiscordBot
     {
         public static uint Msgs = 0;
 
-        private static Api Api;
+        private static Client Api;
         public static User Me;
         public static ConcurrentDictionary<int, string> UsernameIdCache = new ConcurrentDictionary<int, string>();
         public static List<int> Blocked = new List<int>();
@@ -37,11 +42,11 @@ namespace DiscordBot
             return ServerData.Servers[Id].Music;
         }
 
-        public static async void Respond(Message Msg, string Text, bool DisablePreview = true, ReplyMarkup Markup = null)
+        public static async Task Respond(Message Msg, string Text, bool DisablePreview = true, ReplyMarkup Markup = null)
         {
             try
             {
-                await Api.SendTextMessage(Msg.Chat.Id, Text.Replace('`', '"'), DisablePreview, Msg.MessageId, Markup);
+                await Api.SendTextMessage(Msg.Chat.Id, Text.Replace('`', '"'), DisablePreview, false, Msg.MessageId, Markup);
             }
             catch { }
         }
@@ -61,7 +66,7 @@ namespace DiscordBot
             }
             else
             {
-                Respond(Msg, Text, DisablePreview, Markup);
+                Respond(Msg, Text, DisablePreview, Markup).Forget();
             }
         }
 
@@ -88,11 +93,11 @@ namespace DiscordBot
             return new string[] { InlineId, Command };
         }
 
-        public static async void Start(string ApiKey)
+        public static async Task Start(string ApiKey)
         {
             try
             {
-                Api = new Api(ApiKey);
+                Api = new Client(ApiKey);
                 Me = await Api.GetMe();
             }
             catch (Exception Ex)
@@ -108,10 +113,12 @@ namespace DiscordBot
                 if (Music != null && (string)s != string.Empty)
                 {
                     string[] Data = await ParseInlineId((string)s);
-                    if (Data[0] != null)
+                    if (Data[0] == null)
                     {
-                        await Respond(Data[0], e, "Resolving song..");
+                        return;
                     }
+
+                    await Respond(Data[0], e, "Resolving song..");
 
                     var Files = Directory.GetFiles(SongData.MusicDir).Where(x => x.EndsWith(".mp3") && x.ToLower().Contains(Data[1].ToLower())).ToArray();
                     string Song;
@@ -247,13 +254,13 @@ namespace DiscordBot
                 }
             });
 
-            Commands.Add("pair", (s, e) =>
+            Commands.Add("pair", async (s, e) =>
             {
                 if (NextPairChannel != null)
                 {
                     Db.SetDiscordServerId(e.Chat.Id, NextPairChannel.Server.Id);
-                    Respond(e, "This chat has now been succesfully paired with " + NextPairChannel.Server.Name);
-                    Bot.Send(NextPairChannel, "This server has been paired with " + ((e.Chat.Type == ChatType.Private) ? "" : e.Chat.Title + " by ") + e.From.Username);
+                    Respond(e, "This chat has now been succesfully paired with " + NextPairChannel.Server.Name).Forget();
+                    await Bot.SendAsync(NextPairChannel, "This server has been paired with " + ((e.Chat.Type == ChatType.Private) ? "" : e.Chat.Title + " by ") + e.From.Username);
 
                     NextPairChannel = null;
                 }
@@ -265,7 +272,7 @@ namespace DiscordBot
                 {
                     if (e.Chat.Type == ChatType.Private || e.Chat.Title.StartsWith("H"))
                     {
-                        Respond(e, Lewd.GetRandomLewd(s, (e.From.Username != "Akkey" && e.Chat.Type != ChatType.Private)), false);
+                        Respond(e, Lewd.GetRandomLewd(s, (e.From.Username != "Akkey" && e.Chat.Type != ChatType.Private)), false).Forget();
                     }
                 }
                 catch (Exception Ex)
@@ -439,7 +446,7 @@ namespace DiscordBot
                         ListRequest.Q = e.InlineQuery.Query;
                         ListRequest.Type = "video";
 
-                        foreach (var Video in ListRequest.Execute().Items)
+                        foreach (var Video in (await ListRequest.ExecuteAsync()).Items)
                         {
                             Result = new InlineQueryResultVideo();
                             Result.Id = (MsgId + i++).ToString();

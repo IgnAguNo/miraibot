@@ -12,6 +12,11 @@ namespace DiscordBot
 {
     static class Extentions
     {
+        public static void Forget(this Task T)
+        {
+
+        }
+
         public static string Compact(this object ObjInput, int MaxPart = 35)
         {
             try

@@ -29,7 +29,7 @@ namespace DiscordBot
             Server = UseServer;
 
             Music = new MusicHandler(UseServer);
-            Music.Run();
+            Music.Run().Forget();
 
             foreach (var Channel in UseServer.VoiceChannels)
             {

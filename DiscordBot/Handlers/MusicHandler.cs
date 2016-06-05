@@ -78,10 +78,10 @@ namespace DiscordBot.Handlers
 
         public MusicHandler(Server S)
         {
-            Load(S);
+            Load(S).Forget();
         }
         
-        public async void Run()
+        public async Task Run()
         {
             //delayed start, force new thread
             await Task.Delay(100);
@@ -141,7 +141,7 @@ namespace DiscordBot.Handlers
                             {
                                 if (Sending != null)
                                 {
-                                    Sending.Wait(1000);
+                                    await Task.WhenAny(Sending, Task.Delay(1000));
                                 }
 
                                 Sending = AudioClient.OutputStream.WriteAsync(NextSend, 0, NextSend.Length);
@@ -466,7 +466,7 @@ namespace DiscordBot.Handlers
             return Data.Length;
         }
 
-        public async void Load(Server S, string s = "", Channel C = null)
+        public async Task Load(Server S, string s = "", Channel C = null)
         {
             string Identifier = AlphaNum.Replace(s.Trim().ToLower(), "");
             Message M = null;

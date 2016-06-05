@@ -75,12 +75,21 @@ namespace DiscordBot
 
             if (!File.Exists(CredentialsFile))
             {
-                $"{CredentialsFile} not found".Log();
-                Console.ReadKey();
-                return;
+                Console.WriteLine("Create a new bot account at https://discordapp.com/developers/applications/me");
+
+                Console.Write("Bot Token: ");
+                Token = Console.ReadLine();
+
+                Console.Write("Application Id: ");
+                while (!ulong.TryParse(Console.ReadLine(), out AppId)) ;
+
+                Console.Write("Owner Id: ");
+                while (!ulong.TryParse(Console.ReadLine(), out Owner)) ;
+
+                File.WriteAllText(CredentialsFile, Token + "\r\n" + AppId + "\r\n" + Owner);
             }
 
-            string[] Credentials = File.ReadAllText(CredentialsFile).Replace("\r", string.Empty).Split('\n');
+            var Credentials = File.ReadAllText(CredentialsFile).Replace("\r", string.Empty).Split('\n');
             Token = Credentials[0];
             if (ulong.TryParse(Credentials[1], out AppId))
             {
@@ -127,6 +136,18 @@ namespace DiscordBot
                 await Client.Connect(Token);
             }).UntilNoExceptionAsync<Discord.Net.WebSocketException>(3).Wait();
 
+            if (Client.State != ConnectionState.Connected)
+            {
+                Console.WriteLine("Could not connect to Discord. Type 'delete' to delete the current credentials file");
+
+                if (Console.ReadLine() == "delete")
+                {
+                    File.Delete(CredentialsFile);
+                }
+
+                return;
+            }
+
             Updater = new Timer(1000);
             Updater.Elapsed += UpdateTitle;
             Updater.AutoReset = true;
@@ -149,7 +170,7 @@ namespace DiscordBot
 
             if (File.Exists(TelegramFile))
             {
-                TelegramIntegration.Start(File.ReadAllText(TelegramFile).Trim());
+                TelegramIntegration.Start(File.ReadAllText(TelegramFile).Trim()).Forget();
             }
 
             Client.Wait();

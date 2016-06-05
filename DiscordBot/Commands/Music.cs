@@ -170,7 +170,7 @@ namespace DiscordBot.Commands
 
         public static void Load(object s, MessageEventArgs e)
         {
-            e.Music().Load(e.Server, (string)s, e.Channel);
+            e.Music().Load(e.Server, (string)s, e.Channel).Forget();
         }
 
         public static void Pair(object s, MessageEventArgs e)

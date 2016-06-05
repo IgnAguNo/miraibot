@@ -31,10 +31,10 @@ namespace DiscordBot
                 RedirectStandardOutput = true
             });
 
-            MainLoop();
+            MainLoop().Forget();
         }
 
-        private async void MainLoop()
+        private async Task MainLoop()
         {
             int Read = 0;
 
