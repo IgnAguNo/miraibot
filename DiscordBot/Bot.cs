@@ -75,15 +75,17 @@ namespace DiscordBot
 
             if (!File.Exists(CredentialsFile))
             {
-                Console.WriteLine("Create a new bot account at https://discordapp.com/developers/applications/me");
+                "Create a new bot account at https://discordapp.com/developers/applications/me".Log();
 
-                Console.Write("Bot Token: ");
+                Console.Write("[Text] Bot Token: ");
                 Token = Console.ReadLine();
 
-                Console.Write("Application Id: ");
+                Console.Write("[Number] Application Id: ");
                 while (!ulong.TryParse(Console.ReadLine(), out AppId)) ;
 
-                Console.Write("Owner Id: ");
+                "You can find your id (the bot owner's id) by typing \\@YourName in a server".Log();
+
+                Console.Write("[Number] Owner Id: ");
                 while (!ulong.TryParse(Console.ReadLine(), out Owner)) ;
 
                 File.WriteAllText(CredentialsFile, Token + "\r\n" + AppId + "\r\n" + Owner);
@@ -131,10 +133,16 @@ namespace DiscordBot
             Client.ServerAvailable += ClientEvents.ServerAvailable;
             Client.LeftServer += ClientEvents.LeftServer;
 
-            new Func<Task>(async delegate
+            try
             {
-                await Client.Connect(Token);
-            }).UntilNoExceptionAsync<Discord.Net.WebSocketException>(3).Wait();
+                new Func<Task>(async delegate
+                {
+                    await Client.Connect(Token);
+                }).UntilNoExceptionAsync<Discord.Net.WebSocketException>(3).Wait();
+            }
+            catch (AggregateException)
+            {
+            }
 
             if (Client.State != ConnectionState.Connected)
             {
